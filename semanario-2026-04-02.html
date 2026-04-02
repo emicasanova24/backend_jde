@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Semanario Deportivo — Juego de Equipo</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config={darkMode:"class",theme:{extend:{colors:{"surface-container":"#1a191b","surface":"#0e0e0f","on-surface":"#ffffff","on-surface-variant":"#adaaab","surface-container-high":"#201f21","surface-container-highest":"#262627","surface-container-low":"#131314","surface-variant":"#262627","primary":"#8c52ff","primary-dim":"#884efb","on-primary":"#3b008a","primary-container":"#b08cff","secondary":"#ca93fe","tertiary":"#ff93b1","error":"#ff6e84","outline":"#767576","outline-variant":"#484849","background":"#0e0e0f","on-background":"#ffffff"},fontFamily:{headline:["Lexend","sans-serif"],body:["Manrope","sans-serif"],label:["Manrope","sans-serif"]},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem","2xl":"1rem",full:"9999px"}}}}
+</script>
+<style>
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0e0e0f}::-webkit-scrollbar-thumb{background:#262627;border-radius:10px}::-webkit-scrollbar-thumb:hover{background:#8c52ff}
+body{font-family:'Manrope',sans-serif;background:#0e0e0f;color:#fff}
+.cat-btn{transition:all .2s}
+.cat-btn.active{background:#8c52ff;color:#fff;box-shadow:0 4px 20px rgba(140,82,255,.3)}
+.cat-btn:not(.active){background:rgba(140,82,255,.1);color:#adaaab}
+.cat-btn:not(.active):hover{background:rgba(140,82,255,.2);color:#fff}
+.sec-tab{transition:all .2s;border-bottom:3px solid transparent;color:#adaaab}
+.sec-tab.active{border-color:#8c52ff;color:#8c52ff}
+.sec-tab:hover:not(.active){color:#fff}
+.fade-in{animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body class="min-h-screen selection:bg-primary/30">
+
+<div class="max-w-5xl mx-auto px-3 sm:px-6 py-6 sm:py-10">
+
+  <!-- header -->
+  <header class="text-center mb-8 sm:mb-12">
+    <div class="inline-flex items-center gap-3 mb-4">
+      <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
+        <span class="material-symbols-outlined text-primary text-3xl sm:text-4xl" style="font-variation-settings:'FILL' 1">sports_soccer</span>
+      </div>
+    </div>
+    <h1 class="font-headline text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tighter bg-gradient-to-r from-primary via-secondary to-tertiary bg-clip-text text-transparent">Juego de Equipo</h1>
+    <p class="text-on-surface-variant mt-2 text-sm sm:text-base font-medium">Semanario Deportivo</p>
+    <p class="text-on-surface-variant/60 text-xs sm:text-sm mt-1">jueves, 2 de abril de 2026</p>
+  </header>
+
+  <!-- category selector -->
+  <div class="flex justify-center gap-2 sm:gap-3 mb-8">
+    <button onclick="switchCat('Primera')" id="btn-Primera" class="cat-btn px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm sm:text-base font-bold font-headline active">Primera</button>
+    <button onclick="switchCat('Tercera')" id="btn-Tercera" class="cat-btn px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm sm:text-base font-bold font-headline">Reserva</button>
+    <button onclick="switchCat('Senior')" id="btn-Senior" class="cat-btn px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm sm:text-base font-bold font-headline">Senior</button>
+  </div>
+
+  <!-- section tabs -->
+  <div class="flex gap-4 sm:gap-8 border-b border-outline-variant/20 mb-6 overflow-x-auto">
+    <button onclick="switchSec('posiciones')" id="tab-posiciones" class="sec-tab active pb-3 text-sm sm:text-base font-bold font-headline whitespace-nowrap flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-lg">format_list_numbered</span>Posiciones</button>
+    <button onclick="switchSec('resultados')" id="tab-resultados" class="sec-tab pb-3 text-sm sm:text-base font-bold font-headline whitespace-nowrap flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-lg">calendar_month</span>Resultados</button>
+    <button onclick="switchSec('goleadores')" id="tab-goleadores" class="sec-tab pb-3 text-sm sm:text-base font-bold font-headline whitespace-nowrap flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-lg">sports_soccer</span>Goleadores</button>
+    <button onclick="switchSec('tarjetas')" id="tab-tarjetas" class="sec-tab pb-3 text-sm sm:text-base font-bold font-headline whitespace-nowrap flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-lg">style</span>Tarjetas</button>
+  </div>
+
+  <div id="content"></div>
+
+  <footer class="mt-12 pt-6 border-t border-outline-variant/10 text-center">
+    <p class="text-on-surface-variant/40 text-xs">Generado por <span class="text-primary font-bold">Juego de Equipo</span> &bull; jueves, 2 de abril de 2026</p>
+  </footer>
+</div>
+
+<script>
+const DATA={"Primera":{"tabla":[{"equipo":"Unión Deportiva","id":4,"pj":3,"pg":3,"pe":0,"pp":0,"gf":8,"gc":1,"dg":7,"puntos":9},{"equipo":"Jorge Newbery","id":15,"pj":2,"pg":2,"pe":0,"pp":0,"gf":6,"gc":2,"dg":4,"puntos":6},{"equipo":"Cecil A. Roberts","id":3,"pj":2,"pg":2,"pe":0,"pp":0,"gf":5,"gc":1,"dg":4,"puntos":6},{"equipo":"Juventud Unida","id":14,"pj":3,"pg":2,"pe":0,"pp":1,"gf":4,"gc":3,"dg":1,"puntos":6},{"equipo":"Villa del Parque","id":9,"pj":3,"pg":1,"pe":2,"pp":0,"gf":3,"gc":1,"dg":2,"puntos":5},{"equipo":"Salazar FC","id":8,"pj":3,"pg":1,"pe":2,"pp":0,"gf":5,"gc":4,"dg":1,"puntos":5},{"equipo":"Deportivo Garré","id":1,"pj":3,"pg":1,"pe":1,"pp":1,"gf":6,"gc":4,"dg":2,"puntos":4},{"equipo":"Deportivo 17","id":2,"pj":3,"pg":1,"pe":1,"pp":1,"gf":4,"gc":5,"dg":-1,"puntos":4},{"equipo":"Atlético Quenumá","id":6,"pj":3,"pg":1,"pe":1,"pp":1,"gf":3,"gc":6,"dg":-3,"puntos":4},{"equipo":"Deportivo Maza","id":5,"pj":3,"pg":1,"pe":0,"pp":2,"gf":3,"gc":7,"dg":-4,"puntos":3},{"equipo":"El Ceibo","id":10,"pj":3,"pg":0,"pe":2,"pp":1,"gf":2,"gc":3,"dg":-1,"puntos":2},{"equipo":"La Gloria","id":7,"pj":2,"pg":0,"pe":1,"pp":1,"gf":1,"gc":2,"dg":-1,"puntos":1},{"equipo":"Unión de Bonifacio","id":12,"pj":3,"pg":0,"pe":1,"pp":2,"gf":2,"gc":5,"dg":-3,"puntos":1},{"equipo":"Deportivo Argentino","id":13,"pj":3,"pg":0,"pe":1,"pp":2,"gf":3,"gc":7,"dg":-4,"puntos":1},{"equipo":"Atlético Argentino","id":11,"pj":3,"pg":0,"pe":0,"pp":3,"gf":1,"gc":5,"dg":-4,"puntos":0}],"goleadores":[{"nombre":"Ulises Lucas","equipo":"Salazar FC","goles":"2"},{"nombre":"Tobias Garcia","equipo":"Atlético Quenumá","goles":"1"},{"nombre":"Lucas Cepeda","equipo":"Atlético Quenumá","goles":"1"},{"nombre":"Tomás Rodríguez","equipo":"Deportivo Garré","goles":"1"},{"nombre":"Benicio Mascioli","equipo":"Deportivo Garré","goles":"1"},{"nombre":"Mariano Mansilla","equipo":"Salazar FC","goles":"1"}],"tarjetas":{"amarillas":[],"rojas":[]},"partidos":[{"id":47,"fecha":"2026-03-09T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 14","localId":14,"visitanteId":1,"estado":"jugado","golesLocal":0,"golesVisitante":3,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":1,"broadcast":null,"local":"Juventud Unida","visitante":"Deportivo Garré","localEscudo":"http://localhost:3000/logos/juventud.png","visitanteEscudo":"http://localhost:3000/logos/garre.png"},{"id":49,"fecha":"2026-03-09T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 8","localId":11,"visitanteId":5,"estado":"jugado","golesLocal":0,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":1,"broadcast":null,"local":"Atlético Argentino","visitante":"Deportivo Maza","localEscudo":"http://localhost:3000/logos/argentinos.png","visitanteEscudo":"http://localhost:3000/logos/maza.png"},{"id":46,"fecha":"2026-03-09T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 13","localId":2,"visitanteId":13,"estado":"jugado","golesLocal":3,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":1,"broadcast":null,"local":"Deportivo 17","visitante":"Deportivo Argentino","localEscudo":"http://localhost:3000/logos/17.png","visitanteEscudo":"http://localhost:3000/logos/deportivoarg.png"},{"id":50,"fecha":"2026-03-09T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 11","localId":10,"visitanteId":4,"estado":"jugado","golesLocal":0,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":1,"broadcast":null,"local":"El Ceibo","visitante":"Unión Deportiva","localEscudo":"http://localhost:3000/logos/ceibo.png","visitanteEscudo":"http://localhost:3000/logos/uniontl.png"},{"id":48,"fecha":"2026-03-09T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 1","localId":3,"visitanteId":12,"estado":"jugado","golesLocal":2,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":1,"broadcast":null,"local":"Cecil A. Roberts","visitante":"Unión de Bonifacio","localEscudo":"http://localhost:3000/logos/roberts.png","visitanteEscudo":"http://localhost:3000/logos/bonifacio.png"},{"id":51,"fecha":"2026-03-09T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 7","localId":6,"visitanteId":7,"estado":"jugado","golesLocal":1,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":1,"broadcast":null,"local":"Atlético Quenumá","visitante":"La Gloria","localEscudo":"http://localhost:3000/logos/quenuma.png","visitanteEscudo":"http://localhost:3000/logos/lagloria.png"},{"id":52,"fecha":"2026-03-09T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 9","localId":8,"visitanteId":9,"estado":"jugado","golesLocal":0,"golesVisitante":0,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":1,"broadcast":null,"local":"Salazar FC","visitante":"Villa del Parque","localEscudo":"http://localhost:3000/logos/salazar.png","visitanteEscudo":"http://localhost:3000/logos/villa.png"},{"id":57,"fecha":"2026-03-16T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 3","localId":12,"visitanteId":2,"estado":"jugado","golesLocal":1,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":2,"broadcast":null,"local":"Unión de Bonifacio","visitante":"Deportivo 17","localEscudo":"http://localhost:3000/logos/bonifacio.png","visitanteEscudo":"http://localhost:3000/logos/17.png"},{"id":54,"fecha":"2026-03-16T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 6","localId":13,"visitanteId":14,"estado":"jugado","golesLocal":0,"golesVisitante":2,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":2,"broadcast":null,"local":"Deportivo Argentino","visitante":"Juventud Unida","localEscudo":"http://localhost:3000/logos/deportivoarg.png","visitanteEscudo":"http://localhost:3000/logos/juventud.png"},{"id":55,"fecha":"2026-03-16T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 5","localId":5,"visitanteId":6,"estado":"jugado","golesLocal":0,"golesVisitante":2,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":2,"broadcast":null,"local":"Deportivo Maza","visitante":"Atlético Quenumá","localEscudo":"http://localhost:3000/logos/maza.png","visitanteEscudo":"http://localhost:3000/logos/quenuma.png"},{"id":53,"fecha":"2026-03-16T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 2","localId":4,"visitanteId":11,"estado":"jugado","golesLocal":2,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":2,"broadcast":null,"local":"Unión Deportiva","visitante":"Atlético Argentino","localEscudo":"http://localhost:3000/logos/uniontl.png","visitanteEscudo":"http://localhost:3000/logos/argentinos.png"},{"id":58,"fecha":"2026-03-16T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 4","localId":1,"visitanteId":8,"estado":"jugado","golesLocal":2,"golesVisitante":3,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":2,"broadcast":null,"local":"Deportivo Garré","visitante":"Salazar FC","localEscudo":"http://localhost:3000/logos/garre.png","visitanteEscudo":"http://localhost:3000/logos/salazar.png"},{"id":59,"fecha":"2026-03-16T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 12","localId":7,"visitanteId":15,"estado":"jugado","golesLocal":0,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":2,"broadcast":null,"local":"La Gloria","visitante":"Jorge Newbery","localEscudo":"http://localhost:3000/logos/lagloria.png","visitanteEscudo":"http://localhost:3000/logos/newbery.png"},{"id":56,"fecha":"2026-03-16T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio Local","localId":9,"visitanteId":10,"estado":"jugado","golesLocal":1,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":2,"broadcast":null,"local":"Villa del Parque","visitante":"El Ceibo","localEscudo":"http://localhost:3000/logos/villa.png","visitanteEscudo":"http://localhost:3000/logos/ceibo.png"},{"id":65,"fecha":"2026-03-23T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 9","localId":8,"visitanteId":13,"estado":"jugado","golesLocal":2,"golesVisitante":2,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":3,"broadcast":null,"local":"Salazar FC","visitante":"Deportivo Argentino","localEscudo":"http://localhost:3000/logos/salazar.png","visitanteEscudo":"http://localhost:3000/logos/deportivoarg.png"},{"id":60,"fecha":"2026-03-23T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 7","localId":6,"visitanteId":4,"estado":"jugado","golesLocal":0,"golesVisitante":5,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":3,"broadcast":null,"local":"Atlético Quenumá","visitante":"Unión Deportiva","localEscudo":"http://localhost:3000/logos/quenuma.png","visitanteEscudo":"http://localhost:3000/logos/uniontl.png"},{"id":66,"fecha":"2026-03-23T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 14","localId":14,"visitanteId":12,"estado":"jugado","golesLocal":2,"golesVisitante":0,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":3,"broadcast":null,"local":"Juventud Unida","visitante":"Unión de Bonifacio","localEscudo":"http://localhost:3000/logos/juventud.png","visitanteEscudo":"http://localhost:3000/logos/bonifacio.png"},{"id":61,"fecha":"2026-03-23T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 11","localId":10,"visitanteId":1,"estado":"jugado","golesLocal":1,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":3,"broadcast":null,"local":"El Ceibo","visitante":"Deportivo Garré","localEscudo":"http://localhost:3000/logos/ceibo.png","visitanteEscudo":"http://localhost:3000/logos/garre.png"},{"id":63,"fecha":"2026-03-23T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 10","localId":15,"visitanteId":5,"estado":"jugado","golesLocal":5,"golesVisitante":2,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":3,"broadcast":null,"local":"Jorge Newbery","visitante":"Deportivo Maza","localEscudo":"http://localhost:3000/logos/newbery.png","visitanteEscudo":"http://localhost:3000/logos/maza.png"},{"id":62,"fecha":"2026-03-23T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 13","localId":2,"visitanteId":3,"estado":"jugado","golesLocal":0,"golesVisitante":3,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":3,"broadcast":null,"local":"Deportivo 17","visitante":"Cecil A. Roberts","localEscudo":"http://localhost:3000/logos/17.png","visitanteEscudo":"http://localhost:3000/logos/roberts.png"},{"id":64,"fecha":"2026-03-23T03:00:00.000Z","hora":"15:00:00","estadio":"Estadio 8","localId":11,"visitanteId":9,"estado":"jugado","golesLocal":0,"golesVisitante":2,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera","jornada":3,"broadcast":null,"local":"Atlético Argentino","visitante":"Villa del Parque","localEscudo":"http://localhost:3000/logos/argentinos.png","visitanteEscudo":"http://localhost:3000/logos/villa.png"}],"jornadas":[{"jornada":1,"total":"7","jugados":"7"},{"jornada":2,"total":"7","jugados":"7"},{"jornada":3,"total":"7","jugados":"7"}]},"Tercera":{"tabla":[{"equipo":"Deportivo Garré","id":57,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"Deportivo Maza","id":58,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"Deportivo Argentino","id":59,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"Cecil A. Roberts","id":54,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"Unión Deportiva","id":55,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"Unión de Bonifacio","id":56,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"Atlético Quenumá","id":60,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"Atlético Argentino","id":61,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"Salazar FC","id":62,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"Jorge Newbery","id":63,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"El Ceibo","id":64,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"La Gloria","id":65,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"Deportivo 17","id":66,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"Juventud Unida","id":67,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0}],"goleadores":[],"tarjetas":{"amarillas":[],"rojas":[]},"partidos":[],"jornadas":[]},"Senior":{"tabla":[{"equipo":"Juventud Unida","id":81,"pj":3,"pg":3,"pe":0,"pp":0,"gf":13,"gc":2,"dg":11,"puntos":9},{"equipo":"El Ceibo","id":78,"pj":3,"pg":2,"pe":1,"pp":0,"gf":6,"gc":2,"dg":4,"puntos":7},{"equipo":"Atlético Argentino","id":75,"pj":3,"pg":2,"pe":1,"pp":0,"gf":5,"gc":2,"dg":3,"puntos":7},{"equipo":"Deportivo Argentino","id":73,"pj":3,"pg":2,"pe":0,"pp":1,"gf":8,"gc":3,"dg":5,"puntos":6},{"equipo":"Cecil A. Roberts","id":68,"pj":2,"pg":2,"pe":0,"pp":0,"gf":5,"gc":0,"dg":5,"puntos":6},{"equipo":"Deportivo Maza","id":72,"pj":2,"pg":1,"pe":1,"pp":0,"gf":3,"gc":2,"dg":1,"puntos":4},{"equipo":"Villa del Parque","id":124,"pj":3,"pg":1,"pe":0,"pp":2,"gf":4,"gc":5,"dg":-1,"puntos":3},{"equipo":"Unión de Bonifacio","id":70,"pj":3,"pg":1,"pe":0,"pp":2,"gf":2,"gc":10,"dg":-8,"puntos":3},{"equipo":"Ferro","id":74,"pj":3,"pg":0,"pe":2,"pp":1,"gf":1,"gc":2,"dg":-1,"puntos":2},{"equipo":"La Gloria","id":79,"pj":1,"pg":0,"pe":1,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":1},{"equipo":"Deportivo Garré","id":71,"pj":2,"pg":0,"pe":1,"pp":1,"gf":2,"gc":6,"dg":-4,"puntos":1},{"equipo":"Unión Deportiva","id":69,"pj":3,"pg":0,"pe":1,"pp":2,"gf":1,"gc":5,"dg":-4,"puntos":1},{"equipo":"Jorge Newbery","id":77,"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0,"dg":0,"puntos":0},{"equipo":"Salazar FC","id":76,"pj":2,"pg":0,"pe":0,"pp":2,"gf":1,"gc":4,"dg":-3,"puntos":0},{"equipo":"Deportivo 17","id":80,"pj":3,"pg":0,"pe":0,"pp":3,"gf":1,"gc":9,"dg":-8,"puntos":0}],"goleadores":[],"tarjetas":{"amarillas":[],"rojas":[]},"partidos":[{"id":73,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio de Juventud Unida","localId":81,"visitanteId":71,"estado":"jugado","golesLocal":5,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":1,"broadcast":null,"local":"Juventud Unida","visitante":"Deportivo Garré","localEscudo":"http://localhost:3000/logos/juventud.png","visitanteEscudo":"http://localhost:3000/logos/garre.png"},{"id":70,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio José Sardon","localId":75,"visitanteId":72,"estado":"jugado","golesLocal":1,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":1,"broadcast":null,"local":"Atlético Argentino","visitante":"Deportivo Maza","localEscudo":"http://localhost:3000/logos/argentinos.png","visitanteEscudo":"http://localhost:3000/logos/maza.png"},{"id":68,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio de Deportivo 17","localId":80,"visitanteId":73,"estado":"jugado","golesLocal":1,"golesVisitante":6,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":1,"broadcast":null,"local":"Deportivo 17","visitante":"Deportivo Argentino","localEscudo":"http://localhost:3000/logos/17.png","visitanteEscudo":"http://localhost:3000/logos/deportivoarg.png"},{"id":71,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio Doctor Pippo","localId":78,"visitanteId":69,"estado":"jugado","golesLocal":3,"golesVisitante":0,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":1,"broadcast":null,"local":"El Ceibo","visitante":"Unión Deportiva","localEscudo":"http://localhost:3000/logos/ceibo.png","visitanteEscudo":"http://localhost:3000/logos/uniontl.png"},{"id":74,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio de Cecil A. Roberts","localId":68,"visitanteId":70,"estado":"jugado","golesLocal":4,"golesVisitante":0,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":1,"broadcast":null,"local":"Cecil A. Roberts","visitante":"Unión de Bonifacio","localEscudo":"http://localhost:3000/logos/roberts.png","visitanteEscudo":"http://localhost:3000/logos/bonifacio.png"},{"id":69,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio \"Liti\" Hernandez","localId":74,"visitanteId":79,"estado":"jugado","golesLocal":0,"golesVisitante":0,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":1,"broadcast":null,"local":"Ferro","visitante":"La Gloria","localEscudo":"http://localhost:3000/logos/ferro.png","visitanteEscudo":"http://localhost:3000/logos/lagloria.png"},{"id":72,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio de Salazar","localId":76,"visitanteId":124,"estado":"jugado","golesLocal":1,"golesVisitante":3,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":1,"broadcast":null,"local":"Salazar FC","visitante":"Villa del Parque","localEscudo":"http://localhost:3000/logos/salazar.png","visitanteEscudo":""},{"id":76,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio de Villa del Parque","localId":124,"visitanteId":78,"estado":"jugado","golesLocal":1,"golesVisitante":2,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":2,"broadcast":null,"local":"Villa del Parque","visitante":"El Ceibo","localEscudo":"","visitanteEscudo":"http://localhost:3000/logos/ceibo.png"},{"id":75,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio \"Azul\" Francisco Morero","localId":69,"visitanteId":75,"estado":"jugado","golesLocal":1,"golesVisitante":2,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":2,"broadcast":null,"local":"Unión Deportiva","visitante":"Atlético Argentino","localEscudo":"http://localhost:3000/logos/uniontl.png","visitanteEscudo":"http://localhost:3000/logos/argentinos.png"},{"id":78,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio Demetrio Carmelo Loyarte","localId":72,"visitanteId":74,"estado":"jugado","golesLocal":2,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":2,"broadcast":null,"local":"Deportivo Maza","visitante":"Ferro","localEscudo":"http://localhost:3000/logos/maza.png","visitanteEscudo":"http://localhost:3000/logos/ferro.png"},{"id":79,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio de Unión de Bonifacio","localId":70,"visitanteId":80,"estado":"jugado","golesLocal":2,"golesVisitante":0,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":2,"broadcast":null,"local":"Unión de Bonifacio","visitante":"Deportivo 17","localEscudo":"http://localhost:3000/logos/bonifacio.png","visitanteEscudo":"http://localhost:3000/logos/17.png"},{"id":77,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio de Deportivo Argentino","localId":73,"visitanteId":81,"estado":"jugado","golesLocal":1,"golesVisitante":2,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":2,"broadcast":null,"local":"Deportivo Argentino","visitante":"Juventud Unida","localEscudo":"http://localhost:3000/logos/deportivoarg.png","visitanteEscudo":"http://localhost:3000/logos/juventud.png"},{"id":80,"fecha":"2026-03-22T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio José Sardon","localId":75,"visitanteId":124,"estado":"jugado","golesLocal":2,"golesVisitante":0,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":3,"broadcast":null,"local":"Atlético Argentino","visitante":"Villa del Parque","localEscudo":"http://localhost:3000/logos/argentinos.png","visitanteEscudo":""},{"id":82,"fecha":"2026-03-29T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio Doctor Pippo","localId":78,"visitanteId":71,"estado":"jugado","golesLocal":1,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":3,"broadcast":null,"local":"El Ceibo","visitante":"Deportivo Garré","localEscudo":"http://localhost:3000/logos/ceibo.png","visitanteEscudo":"http://localhost:3000/logos/garre.png"},{"id":84,"fecha":"2026-03-29T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio de Juventud Unida","localId":81,"visitanteId":70,"estado":"jugado","golesLocal":6,"golesVisitante":0,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":3,"broadcast":null,"local":"Juventud Unida","visitante":"Unión de Bonifacio","localEscudo":"http://localhost:3000/logos/juventud.png","visitanteEscudo":"http://localhost:3000/logos/bonifacio.png"},{"id":81,"fecha":"2026-03-29T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio \"Liti\" Hernandez","localId":74,"visitanteId":69,"estado":"jugado","golesLocal":0,"golesVisitante":0,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":3,"broadcast":null,"local":"Ferro","visitante":"Unión Deportiva","localEscudo":"http://localhost:3000/logos/ferro.png","visitanteEscudo":"http://localhost:3000/logos/uniontl.png"},{"id":83,"fecha":"2026-03-29T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio de Salazar","localId":76,"visitanteId":73,"estado":"jugado","golesLocal":0,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":3,"broadcast":null,"local":"Salazar FC","visitante":"Deportivo Argentino","localEscudo":"http://localhost:3000/logos/salazar.png","visitanteEscudo":"http://localhost:3000/logos/deportivoarg.png"},{"id":85,"fecha":"2026-03-29T03:00:00.000Z","hora":"11:00:00","estadio":"Estadio de Deportivo 17","localId":80,"visitanteId":68,"estado":"jugado","golesLocal":0,"golesVisitante":1,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Senior","jornada":3,"broadcast":null,"local":"Deportivo 17","visitante":"Cecil A. Roberts","localEscudo":"http://localhost:3000/logos/17.png","visitanteEscudo":"http://localhost:3000/logos/roberts.png"}],"jornadas":[{"jornada":1,"total":"7","jugados":"7"},{"jornada":2,"total":"5","jugados":"5"},{"jornada":3,"total":"6","jugados":"6"}]}};
+const CATS=["Primera","Tercera","Senior"];
+let curCat=CATS[0],curSec='posiciones';
+
+function switchCat(c){curCat=c;CATS.forEach(x=>document.getElementById('btn-'+x).classList.toggle('active',x===c));render()}
+function switchSec(s){curSec=s;['posiciones','resultados','goleadores','tarjetas'].forEach(x=>document.getElementById('tab-'+x).classList.toggle('active',x===s));render()}
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+
+function render(){
+  const d=DATA[curCat];
+  const el=document.getElementById('content');
+  if(!d){el.innerHTML='<p class="text-center text-on-surface-variant py-12">Sin datos</p>';return}
+  switch(curSec){
+    case 'posiciones':el.innerHTML=renderPos(d.tabla);break;
+    case 'resultados':el.innerHTML=renderRes(d.partidos);break;
+    case 'goleadores':el.innerHTML=renderGol(d.goleadores);break;
+    case 'tarjetas':el.innerHTML=renderTar(d.tarjetas);break;
+  }
+  el.classList.remove('fade-in');void el.offsetWidth;el.classList.add('fade-in');
+}
+
+/* ---------- posiciones ---------- */
+function renderPos(t){
+  if(!t||!t.length) return '<p class="text-center text-on-surface-variant py-12">No hay datos de posiciones</p>';
+  const hdr='<tr class="bg-surface-container text-on-surface-variant text-xs uppercase tracking-wider">'
+    +'<th class="px-4 sm:px-6 py-3 text-left w-12">#</th>'
+    +'<th class="px-4 py-3 text-left">Equipo</th>'
+    +'<th class="px-3 py-3 text-center">PJ</th>'
+    +'<th class="px-3 py-3 text-center">PG</th>'
+    +'<th class="px-3 py-3 text-center">PE</th>'
+    +'<th class="px-3 py-3 text-center">PP</th>'
+    +'<th class="px-3 py-3 text-center hidden sm:table-cell">GF</th>'
+    +'<th class="px-3 py-3 text-center hidden sm:table-cell">GC</th>'
+    +'<th class="px-3 py-3 text-center">DG</th>'
+    +'<th class="px-4 sm:px-6 py-3 text-right">PTS</th></tr>';
+
+  const rows=t.map((r,i)=>{
+    const pc=i===0?'text-yellow-400':i===1?'text-slate-400':i===2?'text-amber-600':'text-on-surface-variant';
+    const ic=i===0?'stars':i<3?'workspace_premium':'shield';
+    const icc=i===0?'text-yellow-400':i===1?'text-slate-400':i===2?'text-amber-600':'text-secondary/50';
+    const dg=r.dg>0?'+'+r.dg:String(r.dg);
+    const dgc=r.dg>0?'text-emerald-400':r.dg<0?'text-error':'text-on-surface-variant';
+    return '<tr class="group hover:bg-primary/5 transition-colors">'
+      +'<td class="px-4 sm:px-6 py-4 font-headline font-black text-base '+pc+'">'+String(i+1).padStart(2,'0')+'</td>'
+      +'<td class="px-4 py-4"><div class="flex items-center gap-3">'
+      +'<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0">'
+      +'<span class="material-symbols-outlined '+icc+' text-lg" style="font-variation-settings:\'FILL\' 1">'+ic+'</span></div>'
+      +'<span class="font-bold group-hover:text-primary transition-colors">'+esc(r.equipo)+'</span></div></td>'
+      +'<td class="px-3 py-4 text-center text-on-surface-variant">'+r.pj+'</td>'
+      +'<td class="px-3 py-4 text-center text-on-surface-variant">'+r.pg+'</td>'
+      +'<td class="px-3 py-4 text-center text-on-surface-variant">'+r.pe+'</td>'
+      +'<td class="px-3 py-4 text-center text-on-surface-variant">'+r.pp+'</td>'
+      +'<td class="px-3 py-4 text-center text-on-surface-variant hidden sm:table-cell">'+r.gf+'</td>'
+      +'<td class="px-3 py-4 text-center text-on-surface-variant hidden sm:table-cell">'+r.gc+'</td>'
+      +'<td class="px-3 py-4 text-center font-mono font-semibold '+dgc+'">'+dg+'</td>'
+      +'<td class="px-4 sm:px-6 py-4 text-right font-headline font-black text-lg">'+r.puntos+'</td></tr>';
+  }).join('');
+
+  return '<div class="bg-surface-container-high rounded-2xl border border-outline-variant/10 overflow-hidden"><div class="overflow-x-auto">'
+    +'<table class="w-full text-sm min-w-[580px]"><thead>'+hdr+'</thead><tbody class="divide-y divide-outline-variant/5">'+rows+'</tbody></table></div></div>';
+}
+
+/* ---------- resultados ---------- */
+function renderRes(partidos){
+  if(!partidos||!partidos.length) return '<p class="text-center text-on-surface-variant py-12">No hay partidos registrados</p>';
+  const byJ={};
+  partidos.forEach(p=>{const j=p.jornada||0;if(!byJ[j])byJ[j]=[];byJ[j].push(p)});
+  const nums=Object.keys(byJ).map(Number).sort((a,b)=>a-b);
+
+  return '<div class="space-y-6">'+nums.map(j=>{
+    const mm=byJ[j];
+    const jugados=mm.filter(m=>m.estado==='jugado').length;
+    return '<div class="bg-surface-container-high rounded-2xl border border-outline-variant/10 overflow-hidden">'
+      +'<div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-outline-variant/10 flex items-center justify-between">'
+      +'<h3 class="font-headline font-bold text-base sm:text-lg">Fecha '+(j||'?')+'</h3>'
+      +'<span class="text-xs text-on-surface-variant bg-surface-container px-2 py-1 rounded-lg">'+jugados+'/'+mm.length+' jugados</span></div>'
+      +'<div class="divide-y divide-outline-variant/5">'+mm.map(p=>{
+        const played=p.estado==='jugado';
+        const le=p.localEscudo?'<img src="'+esc(p.localEscudo)+'" alt="" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover shrink-0" onerror="this.style.display=\'none\'"/>':'';
+        const ve=p.visitanteEscudo?'<img src="'+esc(p.visitanteEscudo)+'" alt="" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover shrink-0" onerror="this.style.display=\'none\'"/>':'';
+        const score=played
+          ?'<span class="bg-primary/20 text-primary font-black px-3 sm:px-4 py-1.5 rounded-xl text-sm sm:text-lg min-w-[60px] sm:min-w-[80px] text-center inline-block font-headline">'+p.golesLocal+' - '+p.golesVisitante+'</span>'
+          :'<span class="bg-surface-container text-on-surface-variant px-3 py-1.5 rounded-xl text-xs font-semibold">Pendiente</span>';
+        return '<div class="px-3 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-4 hover:bg-primary/5 transition-colors">'
+          +'<div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">'+le
+          +'<span class="font-bold text-right flex-1 text-xs sm:text-sm truncate">'+esc(p.local)+'</span></div>'
+          +'<div class="shrink-0">'+score+'</div>'
+          +'<div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">'
+          +'<span class="font-bold flex-1 text-xs sm:text-sm truncate">'+esc(p.visitante)+'</span>'+ve+'</div></div>';
+      }).join('')+'</div></div>';
+  }).join('')+'</div>';
+}
+
+/* ---------- goleadores ---------- */
+function renderGol(g){
+  if(!g||!g.length) return '<p class="text-center text-on-surface-variant py-12">No hay goleadores registrados</p>';
+  const rows=g.slice(0,20).map((x,i)=>{
+    const medal=i===0?'\u{1F947}':i===1?'\u{1F948}':i===2?'\u{1F949}':'';
+    return '<tr class="group hover:bg-primary/5 transition-colors">'
+      +'<td class="px-4 sm:px-6 py-3.5 font-headline font-black '+(i<3?'text-primary':'text-on-surface-variant')+'">'+(medal||String(i+1).padStart(2,'0'))+'</td>'
+      +'<td class="px-4 py-3.5 font-bold group-hover:text-primary transition-colors">'+esc(x.nombre)+'</td>'
+      +'<td class="px-4 py-3.5 text-on-surface-variant">'+esc(x.equipo)+'</td>'
+      +'<td class="px-4 sm:px-6 py-3.5 text-right"><span class="inline-flex items-center bg-primary/10 text-primary px-3 py-1 rounded-full font-headline font-black text-base">'+x.goles+'</span></td></tr>';
+  }).join('');
+
+  return '<div class="bg-surface-container-high rounded-2xl border border-outline-variant/10 overflow-hidden"><div class="overflow-x-auto">'
+    +'<table class="w-full text-sm"><thead><tr class="bg-surface-container text-on-surface-variant text-xs uppercase tracking-wider">'
+    +'<th class="px-4 sm:px-6 py-3 text-left w-12">#</th><th class="px-4 py-3 text-left">Jugador</th>'
+    +'<th class="px-4 py-3 text-left">Equipo</th><th class="px-4 sm:px-6 py-3 text-right">Goles</th>'
+    +'</tr></thead><tbody class="divide-y divide-outline-variant/5">'+rows+'</tbody></table></div></div>';
+}
+
+/* ---------- tarjetas ---------- */
+function renderTar(t){
+  const am=t&&t.amarillas||[];const ro=t&&t.rojas||[];
+  if(!am.length&&!ro.length) return '<p class="text-center text-on-surface-variant py-12">No hay tarjetas registradas</p>';
+
+  function tbl(items,emoji,field){
+    if(!items.length) return '<p class="text-center text-on-surface-variant py-8 text-sm">Sin tarjetas</p>';
+    return '<table class="w-full text-sm"><thead><tr class="bg-surface-container text-on-surface-variant text-xs uppercase tracking-wider">'
+      +'<th class="px-4 py-2.5 text-left w-10">#</th><th class="px-3 py-2.5 text-left">Jugador</th>'
+      +'<th class="px-3 py-2.5 text-left hidden sm:table-cell">Equipo</th>'
+      +'<th class="px-4 py-2.5 text-right">'+emoji+'</th></tr></thead>'
+      +'<tbody class="divide-y divide-outline-variant/5">'+items.slice(0,15).map((x,i)=>
+        '<tr class="hover:bg-primary/5 transition-colors"><td class="px-4 py-3 font-bold text-on-surface-variant">'+(i+1)+'</td>'
+        +'<td class="px-3 py-3 font-bold">'+esc(x.nombre)+'</td>'
+        +'<td class="px-3 py-3 text-on-surface-variant hidden sm:table-cell">'+esc(x.equipo)+'</td>'
+        +'<td class="px-4 py-3 text-right font-headline font-black">'+x[field]+'</td></tr>'
+      ).join('')+'</tbody></table>';
+  }
+
+  return '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">'
+    +'<div class="bg-surface-container-high rounded-2xl border border-outline-variant/10 overflow-hidden">'
+    +'<div class="px-4 sm:px-6 py-3 border-b border-outline-variant/10"><h3 class="font-headline font-bold flex items-center gap-2">\u{1F7E8} Tarjetas Amarillas</h3></div>'
+    +tbl(am,'\u{1F7E8}','amarillas')+'</div>'
+    +'<div class="bg-surface-container-high rounded-2xl border border-outline-variant/10 overflow-hidden">'
+    +'<div class="px-4 sm:px-6 py-3 border-b border-outline-variant/10"><h3 class="font-headline font-bold flex items-center gap-2">\u{1F7E5} Tarjetas Rojas</h3></div>'
+    +tbl(ro,'\u{1F7E5}','rojas')+'</div></div>';
+}
+
+render();
+</script>
+</body>
+</html>

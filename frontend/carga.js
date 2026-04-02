@@ -560,6 +560,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Logout  
   $("logoutBtn").addEventListener("click", () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("accountProfile");
     window.location.href = "login.html";
   });
 });
