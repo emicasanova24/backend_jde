@@ -2,6 +2,7 @@ services:
   - type: web
     name: backend-jde
     env: node
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /health
@@ -37,3 +38,4 @@ services:
 
 databases:
   - name: backend-jde-db
+    plan: free

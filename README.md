@@ -13,13 +13,21 @@ Este repositorio incluye [render.yaml](render.yaml) para crear:
 
 1. En Render, elegir New + Blueprint.
 2. Conectar este repositorio de GitHub.
-3. Confirmar la creacion del servicio y la base.
+3. Confirmar la creacion del servicio y la base en plan Free.
 4. Completar las variables manuales del servicio:
    - ADMIN_EMAIL
    - ADMIN_PASSWORD
 5. Esperar el primer deploy.
 
 JWT_SECRET se genera automaticamente desde Render. Las variables de base DB_HOST, DB_PORT, DB_NAME, DB_USER y DB_PASSWORD se enlazan desde la base creada por el blueprint.
+
+### Limitaciones del deploy gratis
+
+- El Web Service Free entra en reposo tras 15 minutos sin trafico.
+- Al reactivarse puede tardar alrededor de 1 minuto en responder.
+- La base Render Postgres Free vence a los 30 dias si no se actualiza a un plan pago.
+- La base Free no incluye backups.
+- Este esquema sirve para prueba y validacion, no para produccion estable.
 
 ### Variables de entorno usadas por la app
 
