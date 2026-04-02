@@ -56,6 +56,10 @@ app.post("/setup/clear", authMiddleware, async (req, res) => {
   }
 });
 
+app.get("/health", (req, res) => {
+  res.json({ ok: true });
+});
+
 // 🧪 Ruta protegida de prueba
 app.get("/test-protegido", authMiddleware, (req, res) => {
   res.json({
@@ -76,6 +80,8 @@ app.use("/sponsors", express.static(path.join(__dirname, "..", "sponsors")));
 // Raíz: sirve index.html del frontend (express.static ya lo hace)
 // No redirect a login — la home es pública
 
-app.listen(process.env.PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${process.env.PORT}`);
+const port = Number(process.env.PORT || 3000);
+
+app.listen(port, () => {
+  console.log(`Servidor corriendo en http://localhost:${port}`);
 });

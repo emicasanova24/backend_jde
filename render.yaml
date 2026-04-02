@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: backend-jde
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: backend-jde-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: backend-jde-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: backend-jde-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: backend-jde-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: backend-jde-db
+          property: password
+      - key: DB_SSL
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: backend-jde-db
