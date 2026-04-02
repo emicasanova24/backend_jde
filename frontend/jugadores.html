@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jugadores — Juego de Equipo</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <div id="sharedNav"></div>
+  <main class="container mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
+    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-5">Gestión de Jugadores</h1>
+    <div class="bg-white p-3 sm:p-4 rounded shadow mb-4">
+      <form id="jugadorForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <input id="jugadorNombre" type="text" placeholder="Nombre" class="border rounded p-2 text-sm" required />
+        <input id="jugadorPosicion" type="text" placeholder="Posición" class="border rounded p-2 text-sm" required />
+        <select id="jugadorEquipo" class="border rounded p-2 text-sm"></select>
+        <button class="bg-slate-800 text-white rounded px-4 py-2 text-sm">Agregar jugador</button>
+      </form>
+    </div>
+    <div class="bg-white p-3 sm:p-4 rounded shadow overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs sm:text-sm min-w-[400px]">
+        <thead class="bg-slate-100"><tr><th class="px-2 py-1 sm:px-3 sm:py-2">Nombre</th><th class="px-2 py-1 sm:px-3 sm:py-2">Posición</th><th class="px-2 py-1 sm:px-3 sm:py-2">Equipo</th><th class="px-2 py-1 sm:px-3 sm:py-2">Acciones</th></tr></thead>
+        <tbody id="jugadoresTableBody"></tbody>
+      </table>
+    </div>
+
+    <div id="jugadorEditModal" class="hidden fixed inset-0 bg-black/30 flex items-center justify-center p-3 sm:p-4">
+      <div class="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full">
+        <h2 class="text-xl font-bold mb-4">Editar Jugador</h2>
+        <form id="editJugadorForm" class="space-y-3">
+          <input type="hidden" id="editJugadorId" />
+          <input id="editJugadorNombre" type="text" placeholder="Nombre" class="w-full border rounded p-2" required />
+          <input id="editJugadorPosicion" type="text" placeholder="Posición" class="w-full border rounded p-2" required />
+          <select id="editJugadorEquipo" class="w-full border rounded p-2"></select>
+          <div class="flex justify-end gap-2">
+            <button type="button" id="closeJugadorModal" class="px-4 py-2 border rounded">Cancelar</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Partidos — Juego de Equipo</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <div id="sharedNav"></div>
+  <main class="container mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
+    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-5">Gestión de Partidos</h1>
+    <div class="bg-white p-3 sm:p-4 rounded shadow mb-4">
+      <form id="partidoForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <input id="partidoFecha" type="date" class="border rounded p-2 text-sm" required />
+        <input id="partidoHora" type="time" class="border rounded p-2 text-sm" required />
+        <input id="partidoEstadio" type="text" placeholder="Estadio" class="border rounded p-2 text-sm" required />
+        <select id="partidoLocal" class="border rounded p-2 text-sm"></select>
+        <select id="partidoVisitante" class="border rounded p-2 text-sm"></select>
+        <button class="bg-slate-800 text-white rounded px-4 py-2 text-sm sm:col-span-2 md:col-span-3 lg:col-span-1">Crear partido</button>
+      </form>
+    </div>
+    <div class="bg-white p-3 sm:p-4 rounded shadow overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs sm:text-sm min-w-[540px]">
+        <thead class="bg-slate-100"><tr><th class="px-2 py-1 sm:px-3 sm:py-2">Fecha</th><th class="px-2 py-1 sm:px-3 sm:py-2">Hora</th><th class="px-2 py-1 sm:px-3 sm:py-2">Estadio</th><th class="px-2 py-1 sm:px-3 sm:py-2">Equipos</th><th class="px-2 py-1 sm:px-3 sm:py-2">Estado</th><th class="px-2 py-1 sm:px-3 sm:py-2">Acción</th></tr></thead>
+        <tbody id="partidosTableBody"></tbody>
+      </table>
+    </div>
+
+    <div id="partidoResultModal" class="hidden fixed inset-0 bg-black/30 flex items-center justify-center p-3 sm:p-4">
+      <div class="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full">
+        <h2 class="text-xl font-bold mb-4">Cargar resultado</h2>
+        <form id="partidoResultForm" class="space-y-3">
+          <input type="hidden" id="resultadoPartidoId" />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+              <label class="block">Local</label>
+              <span id="resLocalEquipo" class="block font-bold"></span>
+              <input id="resGolesLocal" type="number" min="0" class="w-full border rounded p-2" required />
+            </div>
+            <div>
+              <label class="block">Visitante</label>
+              <span id="resVisitanteEquipo" class="block font-bold"></span>
+              <input id="resGolesVisitante" type="number" min="0" class="w-full border rounded p-2" required />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <input id="resAmarillas" type="number" min="0" placeholder="Amarillas" class="border rounded p-2" required />
+            <input id="resRojas" type="number" min="0" placeholder="Rojas" class="border rounded p-2" required />
+          </div>
+          <div class="flex justify-end gap-2">
+            <button type="button" id="closePartidoResultModal" class="px-4 py-2 border rounded">Cancelar</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

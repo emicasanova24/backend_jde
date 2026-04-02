@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Estadísticas — Juego de Equipo</title>
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<meta name="description" content="Estadísticas completas de la liga: posiciones, goleadores, tarjetas, resultados e históricos.">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#8c52ff",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#120d1a",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: "Public Sans", sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; color: #ffffff; }
+        .input-icon { color: #ffffff !important; }
+        .active-tab { border-bottom: 3px solid #8c52ff; color: #8c52ff; }
+        input, textarea { background-color: transparent !important; color: #f3f4f6; }
+        select { background-color: #ffffff !important; color: #0f172a !important; }
+        .dark select { background-color: #1e293b !important; color: #f8fafc !important; }
+        input::placeholder, textarea::placeholder, select::placeholder { color: #cbd5e1; }
+        .card-bg {
+          background-color: rgba(255, 255, 255, 0.12) !important;
+          border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        }
+        .card-text {
+          color: #f3f4f6;
+        }
+      </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/20 px-3 sm:px-6 md:px-10 py-3 sm:py-4">
+<div class="flex items-center gap-2 sm:gap-4 text-primary">
+<img src="/assets/logo.png" alt="Juego de Equipo" class="h-8 sm:h-10 w-auto object-contain" />
+<h2 class="text-slate-900 dark:text-slate-100 text-lg sm:text-xl font-bold leading-tight tracking-[-0.015em]">Juego de Equipo</h2>
+</div>
+<div class="flex gap-2 sm:gap-3">
+<a href="/" class="flex items-center justify-center rounded-xl h-10 px-3 sm:px-4 bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-semibold">
+  <span class="material-symbols-outlined text-[18px] sm:mr-1">home</span><span class="hidden sm:inline"> Inicio</span>
+</a>
+<a href="carga.html" class="flex items-center justify-center rounded-xl h-10 px-3 sm:px-4 bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-semibold" id="cargaLink" style="display:none">
+  <span class="material-symbols-outlined text-[18px] sm:mr-1">edit_note</span><span class="hidden sm:inline"> Carga</span>
+</a>
+<button class="flex items-center justify-center rounded-xl h-10 w-10 bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="flex items-center justify-center rounded-xl h-10 w-10 bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<main class="flex-1 flex flex-col max-w-[1600px] mx-auto w-full p-4 md:p-8">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
+<div>
+<h1 class="text-xl sm:text-2xl md:text-4xl font-black leading-tight tracking-[-0.033em] text-slate-900 dark:text-slate-100">Estadísticas de la Liga</h1>
+<p class="text-slate-500 dark:text-slate-400 mt-1 sm:mt-2 text-sm sm:text-base">Temporada 2025/26 • Clasificación en tiempo real</p>
+</div>
+<div class="flex gap-2">
+<div class="flex rounded-xl bg-primary/10 p-1">
+<button id="tabDataGeneral" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-white text-xs sm:text-sm font-bold">General</button>
+<button id="tabDataLocal" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-primary text-xs sm:text-sm font-bold">Local</button>
+<button id="tabDataVisitante" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-primary text-xs sm:text-sm font-bold">Visitante</button>
+</div>
+</div>
+</div>
+<div class="mb-4 grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_1fr_auto] gap-2 sm:gap-3 items-center">
+  <label class="text-sm font-semibold">Categoría:</label>
+  <select id="categoriaFiltro" class="border rounded p-2 bg-white text-slate-900 dark:bg-slate-800 dark:text-white w-full sm:w-auto">
+    <option value="" selected disabled>Seleccionar categoría</option>
+    <option value="Primera">Primera</option>
+    <option value="Tercera">Tercera</option>
+    <option value="Senior">Senior</option>
+  </select>
+  <label class="text-sm font-semibold">Torneo:</label>
+  <select id="torneoFiltro" class="border rounded p-2 bg-white text-slate-900 dark:bg-slate-800 dark:text-white w-full sm:w-auto">
+    <option value="" selected disabled>Seleccionar torneo</option>
+    <option value="Apertura">Apertura</option>
+    <option value="Clausura">Clausura</option>
+    <option value="Anual">Anual</option>
+  </select>
+  <button id="aplicarFiltro" class="bg-primary px-3 py-2 rounded text-white text-sm font-semibold w-full sm:w-auto">Aplicar</button>
+</div>
+
+<!-- Resultados por jornada (read-only) -->
+<section id="resultadosJornada" class="card-bg p-4 rounded-xl shadow mb-6 hidden">
+  <h2 class="text-xl font-semibold mb-3 card-text">Resultados por Jornada</h2>
+  <div id="jornadaTabs" class="flex flex-wrap gap-2 mb-4"></div>
+  <div id="jornadaResultados" class="space-y-2"></div>
+</section>
+
+<section class="mb-4 sm:mb-6">
+<div class="flex border-b border-primary/10 gap-2 sm:gap-5 md:gap-8 overflow-x-auto">
+<a class="flex items-center gap-1 sm:gap-2 border-b-[3px] border-primary pb-2 sm:pb-3 pt-2 text-primary shrink-0" href="#" id="navTabTabla">
+<span class="material-symbols-outlined text-[20px]">format_list_numbered</span>
+<span class="text-xs sm:text-sm font-bold leading-normal tracking-[0.015em] whitespace-nowrap hidden sm:inline">Tabla de Posiciones</span>
+<span class="text-xs font-bold sm:hidden">Tabla</span>
+</a>
+<a class="flex items-center gap-1 sm:gap-2 border-b-[3px] border-transparent pb-2 sm:pb-3 pt-2 text-slate-500 hover:text-primary transition-colors shrink-0" href="#" id="navTabGoleadores">
+<span class="material-symbols-outlined text-[20px]">sports_soccer</span>
+<span class="text-xs sm:text-sm font-bold leading-normal tracking-[0.015em] whitespace-nowrap hidden sm:inline">Goleadores</span>
+<span class="text-xs font-bold sm:hidden">Goles</span>
+</a>
+<a class="flex items-center gap-1 sm:gap-2 border-b-[3px] border-transparent pb-2 sm:pb-3 pt-2 text-slate-500 hover:text-primary transition-colors shrink-0" href="#" id="navTabTarjetas">
+<span class="material-symbols-outlined text-[20px]">style</span>
+<span class="text-xs sm:text-sm font-bold leading-normal tracking-[0.015em] whitespace-nowrap hidden sm:inline">Tarjetas</span>
+<span class="text-xs font-bold sm:hidden">Tarjetas</span>
+</a>
+<a class="flex items-center gap-1 sm:gap-2 border-b-[3px] border-transparent pb-2 sm:pb-3 pt-2 text-slate-500 hover:text-primary transition-colors shrink-0" href="#" id="navTabResultados">
+<span class="material-symbols-outlined text-[20px]">calendar_month</span>
+<span class="text-xs sm:text-sm font-bold leading-normal tracking-[0.015em] whitespace-nowrap hidden sm:inline">Resultados</span>
+<span class="text-xs font-bold sm:hidden">Fechas</span>
+</a>
+<a class="flex items-center gap-1 sm:gap-2 border-b-[3px] border-transparent pb-2 sm:pb-3 pt-2 text-slate-500 hover:text-primary transition-colors shrink-0" href="#" id="navTabHistoricos">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span class="text-xs sm:text-sm font-bold leading-normal tracking-[0.015em] whitespace-nowrap hidden sm:inline">Históricos</span>
+<span class="text-xs font-bold sm:hidden">H2H</span>
+</a>
+</div>
+</section>
+
+<section id="seccionTabla" class="card-bg p-3 sm:p-4 rounded shadow mb-4 sm:mb-6">
+  <h2 class="text-base sm:text-xl font-semibold mb-2 sm:mb-3 card-text">Tabla de posiciones por categoría</h2>
+  <div class="flex flex-wrap gap-2 sm:gap-4 mb-3">
+    <button id="tabPrimera" class="px-2 sm:px-3 py-1 rounded bg-primary text-white text-xs sm:text-sm">Primera</button>
+    <button id="tabTercera" class="px-2 sm:px-3 py-1 rounded bg-primary/20 text-white text-xs sm:text-sm">Tercera</button>
+    <button id="tabSenior" class="px-2 sm:px-3 py-1 rounded bg-primary/20 text-white text-xs sm:text-sm">Senior</button>
+  </div>
+  <div id="categoriaContainer">
+    <div id="primeraContainer" class="categoria-table">
+      <h3 class="font-semibold mb-2 card-text text-sm sm:text-base">Primera</h3>
+      <div class="overflow-x-auto -mx-3 sm:mx-0">
+      <table class="w-full text-left border-collapse mb-4 text-xs sm:text-sm min-w-[540px]">
+        <thead class="bg-slate-100/10"><tr><th class="px-1 sm:px-2 py-1">#</th><th class="px-1 sm:px-2 py-1">Equipo</th><th class="px-1 sm:px-2 py-1">P</th><th class="px-1 sm:px-2 py-1">PJ</th><th class="px-1 sm:px-2 py-1">PG</th><th class="px-1 sm:px-2 py-1">PE</th><th class="px-1 sm:px-2 py-1">PP</th><th class="px-1 sm:px-2 py-1">GF</th><th class="px-1 sm:px-2 py-1">GC</th><th class="px-1 sm:px-2 py-1">DG</th></tr></thead>
+        <tbody id="tablaPrimeraBody"></tbody>
+      </table>
+      </div>
+    </div>
+    <div id="terceraContainer" class="categoria-table hidden">
+      <h3 class="font-semibold mb-2 card-text text-sm sm:text-base">Tercera</h3>
+      <div class="overflow-x-auto -mx-3 sm:mx-0">
+      <table class="w-full text-left border-collapse mb-4 text-xs sm:text-sm min-w-[540px]">
+        <thead class="bg-slate-100/10"><tr><th class="px-1 sm:px-2 py-1">#</th><th class="px-1 sm:px-2 py-1">Equipo</th><th class="px-1 sm:px-2 py-1">P</th><th class="px-1 sm:px-2 py-1">PJ</th><th class="px-1 sm:px-2 py-1">PG</th><th class="px-1 sm:px-2 py-1">PE</th><th class="px-1 sm:px-2 py-1">PP</th><th class="px-1 sm:px-2 py-1">GF</th><th class="px-1 sm:px-2 py-1">GC</th><th class="px-1 sm:px-2 py-1">DG</th></tr></thead>
+        <tbody id="tablaTerceraBody"></tbody>
+      </table>
+      </div>
+    </div>
+    <div id="seniorContainer" class="categoria-table hidden">
+      <h3 class="font-semibold mb-2 card-text text-sm sm:text-base">Senior</h3>
+      <div class="overflow-x-auto -mx-3 sm:mx-0">
+      <table class="w-full text-left border-collapse mb-4 text-xs sm:text-sm min-w-[540px]">
+        <thead class="bg-slate-100/10"><tr><th class="px-1 sm:px-2 py-1">#</th><th class="px-1 sm:px-2 py-1">Equipo</th><th class="px-1 sm:px-2 py-1">P</th><th class="px-1 sm:px-2 py-1">PJ</th><th class="px-1 sm:px-2 py-1">PG</th><th class="px-1 sm:px-2 py-1">PE</th><th class="px-1 sm:px-2 py-1">PP</th><th class="px-1 sm:px-2 py-1">GF</th><th class="px-1 sm:px-2 py-1">GC</th><th class="px-1 sm:px-2 py-1">DG</th></tr></thead>
+        <tbody id="tablaSeniorBody"></tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="seccionGoleadores" class="hidden">
+<section class="grid grid-cols-1 gap-4">
+  <div class="card-bg p-3 sm:p-4 rounded shadow">
+    <h2 class="font-semibold mb-2 card-text text-sm sm:text-base">Ranking de goleadores</h2>
+    <div class="overflow-x-auto -mx-3 sm:mx-0">
+    <table class="w-full text-xs sm:text-sm min-w-[400px]"><thead><tr><th class="px-1 sm:px-2 py-1">#</th><th class="px-1 sm:px-2 py-1">Jugador</th><th class="px-1 sm:px-2 py-1">Equipo</th><th class="px-1 sm:px-2 py-1">Goles</th></tr></thead><tbody id="goleadoresBody"></tbody></table>
+    </div>
+  </div>
+</section>
+</section>
+<section id="seccionTarjetas" class="hidden">
+<section class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+  <div class="card-bg p-3 sm:p-4 rounded shadow">
+    <h2 class="font-semibold mb-2 card-text text-sm sm:text-base">Tarjetas amarillas</h2>
+    <div class="overflow-x-auto -mx-3 sm:mx-0">
+    <table class="w-full text-xs sm:text-sm min-w-[360px]"><thead><tr><th class="px-1 sm:px-2 py-1">#</th><th class="px-1 sm:px-2 py-1">Jugador</th><th class="px-1 sm:px-2 py-1">Equipo</th><th class="px-1 sm:px-2 py-1">Amarillas</th></tr></thead><tbody id="tarjetasAmarillasBody"></tbody></table>
+    </div>
+  </div>
+  <div class="card-bg p-3 sm:p-4 rounded shadow">
+    <h2 class="font-semibold mb-2 card-text text-sm sm:text-base">Tarjetas rojas</h2>
+    <div class="overflow-x-auto -mx-3 sm:mx-0">
+    <table class="w-full text-xs sm:text-sm min-w-[360px]"><thead><tr><th class="px-1 sm:px-2 py-1">#</th><th class="px-1 sm:px-2 py-1">Jugador</th><th class="px-1 sm:px-2 py-1">Equipo</th><th class="px-1 sm:px-2 py-1">Rojas</th></tr></thead><tbody id="tarjetasRojasBody"></tbody></table>
+    </div>
+  </div>
+</section>
+</section>
+
+<!-- Históricos H2H -->
+<section id="seccionHistoricos" class="hidden">
+  <div class="card-bg p-3 sm:p-4 rounded shadow mb-4 sm:mb-6">
+    <h2 class="text-base sm:text-xl font-semibold mb-3 card-text">Historial entre equipos</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto] gap-2 sm:gap-3 items-end mb-4">
+      <div>
+        <label class="text-xs sm:text-sm font-semibold block mb-1">Categoría</label>
+        <select id="h2hCategoria" class="border rounded p-2 text-sm w-full bg-white text-slate-900 dark:bg-slate-800 dark:text-white">
+          <option value="Primera">Primera</option>
+          <option value="Tercera">Tercera</option>
+          <option value="Senior">Senior</option>
+        </select>
+      </div>
+      <div class="hidden sm:block"></div>
+      <div class="hidden sm:block"></div>
+      <div class="hidden sm:block"></div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto] gap-2 sm:gap-3 items-end">
+      <div>
+        <label class="text-xs sm:text-sm font-semibold block mb-1">Equipo 1</label>
+        <select id="h2hTeam1" class="border rounded p-2 text-sm w-full bg-white text-slate-900 dark:bg-slate-800 dark:text-white">
+          <option value="" disabled selected>Seleccionar equipo</option>
+        </select>
+      </div>
+      <span class="text-slate-500 font-bold text-sm text-center py-2">vs</span>
+      <div>
+        <label class="text-xs sm:text-sm font-semibold block mb-1">Equipo 2</label>
+        <select id="h2hTeam2" class="border rounded p-2 text-sm w-full bg-white text-slate-900 dark:bg-slate-800 dark:text-white">
+          <option value="" disabled selected>Seleccionar equipo</option>
+        </select>
+      </div>
+      <button id="h2hComparar" class="bg-primary px-4 py-2 rounded text-white text-sm font-semibold w-full sm:w-auto">Comparar</button>
+    </div>
+  </div>
+  <div id="h2hResumen" class="mb-4 sm:mb-6"></div>
+  <div id="h2hPartidos" class="space-y-3"></div>
+</section>
+
+</main>
+
+<footer class="bg-slate-50 dark:bg-slate-900 border-t border-primary/10 py-6 sm:py-8 px-4 sm:px-6 mt-8 sm:mt-12">
+  <div class="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6">
+    <div class="flex items-center gap-2 text-primary">
+      <img src="/assets/logo.png" alt="Juego de Equipo" class="h-6 w-auto object-contain" />
+      <span class="font-bold text-sm sm:text-base">Juego de Equipo 2026</span>
+    </div>
+    <div class="flex flex-wrap justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-slate-500">
+      <a class="hover:text-primary transition-colors" href="#">Resultados</a>
+      <a class="hover:text-primary transition-colors" href="#">Calendario</a>
+      <a class="hover:text-primary transition-colors" href="#">Equipos</a>
+      <a class="hover:text-primary transition-colors" href="#">Reglamento</a>
+    </div>
+    <div class="flex gap-4">
+      <button class="size-8 flex items-center justify-center rounded-full bg-primary/10 text-primary">
+        <span class="material-symbols-outlined text-sm">share</span>
+      </button>
+    </div>
+  </div>
+</footer>
+
+</div>
+</div>
+<script src="app.js"></script>
+</body></html>
