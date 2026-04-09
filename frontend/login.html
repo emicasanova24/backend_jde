@@ -8,6 +8,7 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="shared-ui.css" rel="stylesheet"/>
   <script src="tailwind-config.js"></script>
   <style>
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
@@ -27,7 +28,7 @@
         <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-on-surface text-center font-headline">Bienvenido de nuevo</h1>
         <p class="mt-1 sm:mt-2 text-sm text-on-surface-variant">Portal de administración y gestión</p>
       </div>
-      <div class="rounded-2xl border border-outline-variant/20 bg-surface-container-high p-4 sm:p-6 md:p-8 shadow-xl backdrop-blur-sm">
+      <div class="panel-card rounded-2xl p-4 sm:p-6 md:p-8 backdrop-blur-sm">
         <form id="loginForm" class="space-y-6" method="POST">
           <div class="flex flex-col gap-2">
             <label for="email" class="text-sm font-medium leading-none text-on-surface-variant font-headline">Correo del Administrador</label>
@@ -90,7 +91,7 @@
       const token = localStorage.getItem("token");
       if (!token) return;
       try {
-        const response = await fetch("/test-protegido", {
+        const response = await fetch("/api/test-protegido", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.ok) {
@@ -121,7 +122,7 @@
           setSubmitting(true);
           localStorage.removeItem("token");
 
-          const response = await fetch("/auth/login", {
+          const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password }),
@@ -137,13 +138,13 @@
             window.location.href = "dashboard.html";
           } else {
             const fallbackMessage = response.status >= 500
-              ? "El servidor respondió con un error. Revisá que la app local siga levantada."
+              ? "El servidor respondió con un error. Intentá nuevamente en unos minutos."
               : "Credenciales inválidas";
             showMessage(result?.message || fallbackMessage);
           }
         } catch (error) {
           console.error("Login error", error);
-          showMessage("Error de conexión. Verificá que la app esté corriendo en localhost:3000.");
+          showMessage("Error de conexión. Verificá tu conexión e intentá nuevamente.");
         } finally {
           setSubmitting(false);
         }

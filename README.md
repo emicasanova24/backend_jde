@@ -1,35 +1,23 @@
 # backend_jde
 
-Aplicacion Node.js + Express con frontend estatico y PostgreSQL, preparada para desplegarse en Render.
+Proyecto servido con frontend estatico + API PHP sobre MySQL.
 
-## Deploy en Render
+## Estado actual
 
-Este repositorio incluye [render.yaml](render.yaml) para crear:
+- La salida del proyecto es PHP + MySQL.
+- El backend PHP vive en [api/index.php](c:\Users\Emi\Desktop\backend_jde\api\index.php).
+- El router local para desarrollo y validacion vive en [php-router.php](c:\Users\Emi\Desktop\backend_jde\php-router.php).
+- El frontend se sirve de forma estatica desde [frontend](c:\Users\Emi\Desktop\backend_jde\frontend).
 
-- Un Web Service Node
-- Una base Render Postgres
+## Hosting objetivo
 
-### Opcion recomendada: Blueprint
+La configuracion actual queda preparada para hosting PHP clasico con Apache o equivalente, usando:
 
-1. En Render, elegir New + Blueprint.
-2. Conectar este repositorio de GitHub.
-3. Confirmar la creacion del servicio y la base en plan Free.
-4. Completar las variables manuales del servicio:
-   - ADMIN_EMAIL
-   - ADMIN_PASSWORD
-5. Esperar el primer deploy.
+- reescrituras en [\.htaccess](c:\Users\Emi\Desktop\backend_jde\.htaccess)
+- entrada API en [api/index.php](c:\Users\Emi\Desktop\backend_jde\api\index.php)
+- reglas internas en [api/.htaccess](c:\Users\Emi\Desktop\backend_jde\api\.htaccess)
 
-JWT_SECRET se genera automaticamente desde Render. Las variables de base DB_HOST, DB_PORT, DB_NAME, DB_USER y DB_PASSWORD se enlazan desde la base creada por el blueprint.
-
-### Limitaciones del deploy gratis
-
-- El Web Service Free entra en reposo tras 15 minutos sin trafico.
-- Al reactivarse puede tardar alrededor de 1 minuto en responder.
-- La base Render Postgres Free vence a los 30 dias si no se actualiza a un plan pago.
-- La base Free no incluye backups.
-- Este esquema sirve para prueba y validacion, no para produccion estable.
-
-### Variables de entorno usadas por la app
+## Variables de entorno usadas por la API PHP
 
 - DB_HOST
 - DB_PORT
@@ -40,21 +28,24 @@ JWT_SECRET se genera automaticamente desde Render. Las variables de base DB_HOST
 - ADMIN_EMAIL
 - ADMIN_PASSWORD
 - JWT_SECRET
-- PORT
 
-### Scripts
+## Validacion local PHP
 
-- npm start: inicia el servidor en [src/app.js](src/app.js)
+1. Tener PHP 8.1+ con extensiones mysqli, pdo_mysql, openssl y mbstring.
+2. Configurar el archivo .env.
+3. Levantar el servidor con el router de desarrollo:
 
-### Verificaciones despues del deploy
+```powershell
+php -c api/php.ini -S localhost:8000 php-router.php
+```
 
-1. Abrir /health y verificar respuesta ok.
-2. Abrir la home publica del sitio.
-3. Probar login admin.
-4. Revisar que equipos, jugadores, partidos y assets carguen sin errores.
+4. Verificar:
+   - /api/health
+   - /
+   - /login.html
+   - login admin
+   - generacion de semanario
 
-### Desarrollo local
+## Scripts legados
 
-1. Instalar dependencias con npm install.
-2. Configurar .env local.
-3. Iniciar con npm start.
+La carpeta [scripts](c:\Users\Emi\Desktop\backend_jde\scripts) se conserva solo como referencia operativa temporal. No forma parte del servidor ni del despliegue del proyecto, y varios scripts siguen pendientes de adaptación a PHP + MySQL.

@@ -56,6 +56,7 @@ tailwind.config = {
         "inverse-on-surface": "#565556",
       },
       fontFamily: {
+        sans: ["Manrope", "sans-serif"],
         headline: ["Lexend", "sans-serif"],
         body: ["Manrope", "sans-serif"],
         label: ["Manrope", "sans-serif"],

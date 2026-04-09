@@ -1,19 +1,52 @@
 // === Home Page JS — Juego de Equipo ===
-const api = { get: (url) => fetch(url).then((r) => r.json()) };
+const API_BASE = "/api";
+const api = { get: (url) => fetch(API_BASE + url).then((r) => r.json()) };
 
 let currentCategoria = "Primera";
 let currentTorneo = "Apertura";
 let currentJornada = null;
 let equiposMap = {}; // id -> {nombre, escudo}
+let currentSeason = null;
 
 // === Init ===
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // Mobile menu toggle
   const toggle = document.getElementById("menuToggle");
   const menu = document.getElementById("mobileMenu");
+  const menuClose = document.getElementById("menuClose");
+  const menuOverlay = document.getElementById("mobileMenuOverlay");
   if (toggle && menu) {
-    toggle.addEventListener("click", () => menu.classList.toggle("open"));
-    menu.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => menu.classList.remove("open")));
+    const openMenu = () => {
+      document.body.classList.add("menu-open");
+      toggle.setAttribute("aria-expanded", "true");
+      menu.setAttribute("aria-hidden", "false");
+    };
+    const closeMenu = () => {
+      document.body.classList.remove("menu-open");
+      toggle.setAttribute("aria-expanded", "false");
+      menu.setAttribute("aria-hidden", "true");
+    };
+
+    toggle.addEventListener("click", () => {
+      if (document.body.classList.contains("menu-open")) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+    menuClose?.addEventListener("click", closeMenu);
+    menuOverlay?.addEventListener("click", closeMenu);
+    menu.querySelectorAll("a").forEach((a) => a.addEventListener("click", closeMenu));
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && document.body.classList.contains("menu-open")) {
+        closeMenu();
+      }
+    });
+    window.addEventListener("resize", () => {
+      if (window.innerWidth >= 768) {
+        closeMenu();
+      }
+    });
   }
 
   // Category tabs
@@ -41,10 +74,84 @@ document.addEventListener("DOMContentLoaded", () => {
   // H2H
   document.getElementById("homeH2hBtn")?.addEventListener("click", compareH2H);
 
+  await loadActiveSeason();
+  await loadNoticias();
+
   // Load everything
   loadLive();
   loadAll();
 });
+
+function withSeason(path) {
+  if (!currentSeason?.id) return path;
+  const sep = path.includes("?") ? "&" : "?";
+  return `${path}${sep}temporada=${encodeURIComponent(currentSeason.id)}`;
+}
+
+async function loadActiveSeason() {
+  try {
+    const season = await api.get("/temporadas/activa");
+    currentSeason = season;
+    const label = season?.nombre || "2025/26";
+    document.getElementById("homeSeasonBadge")?.replaceChildren(document.createTextNode(`Temporada ${label}`));
+    const inline = document.getElementById("homeSeasonInline");
+    if (inline) inline.textContent = label;
+    const pill = document.getElementById("homeSeasonPill");
+    if (pill) pill.textContent = label;
+  } catch (error) {
+    console.error("Error loading active season:", error);
+  }
+}
+
+async function loadNoticias() {
+  const grid = document.getElementById("homeNoticiasGrid");
+  if (!grid) return;
+
+  try {
+    const news = await api.get(withSeason("/noticias?featured=1&limit=3"));
+    if (!Array.isArray(news) || !news.length) {
+      grid.innerHTML = `<div class="glass-card rounded-2xl p-5 text-sm text-gray-500 lg:col-span-3">Todavía no hay noticias destacadas publicadas para esta temporada.</div>`;
+      return;
+    }
+
+    grid.innerHTML = news.map((item, index) => {
+      const image = item.imagenUrl || "/assets/logo.png";
+      const published = formatFullDate(item.publishedAt || item.createdAt);
+      const badge = item.tag || item.categoria || "General";
+      return `
+        <article class="glass-card rounded-[1.5rem] overflow-hidden border border-white/8 hover:border-primary/30 transition-colors group ${index === 0 ? "lg:col-span-2 lg:grid lg:grid-cols-[1.25fr_1fr]" : ""}">
+          <div class="relative aspect-[16/10] overflow-hidden ${index === 0 ? "lg:aspect-auto lg:min-h-[22rem]" : ""}">
+            <img src="${escapeAttr(image)}" alt="${escapeAttr(item.imagenAlt || item.titulo)}" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" loading="lazy" onerror="this.src='/assets/logo.png'"/>
+            <div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/25 to-transparent"></div>
+            <div class="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-background-dark/70 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white/85">
+              <span class="material-symbols-outlined text-[14px]">sell</span>${escapeHtml(badge)}
+            </div>
+          </div>
+          <div class="flex flex-col gap-4 p-5 sm:p-6 ${index === 0 ? "justify-between" : ""}">
+            <div>
+              <div class="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">
+                <span>${escapeHtml(item.temporadaNombre || currentSeason?.nombre || "Temporada activa")}</span>
+                <span class="h-1 w-1 rounded-full bg-white/20"></span>
+                <span>${escapeHtml(published)}</span>
+              </div>
+              <h3 class="font-headline text-xl sm:text-2xl font-black leading-tight text-white ${index === 0 ? "lg:text-3xl" : ""}">${escapeHtml(item.titulo)}</h3>
+              <p class="mt-3 text-sm sm:text-[15px] leading-6 text-white/68">${escapeHtml(item.copete)}</p>
+            </div>
+            <div class="flex items-center justify-between gap-3 pt-1">
+              <div>
+                <p class="text-[11px] uppercase tracking-[0.16em] text-white/35">Autor</p>
+                <p class="text-sm font-semibold text-white/82">${escapeHtml(item.autorNombre || "Redacción Juego de Equipo")}</p>
+              </div>
+              <a href="#" class="app-button-secondary text-sm">Leer nota</a>
+            </div>
+          </div>
+        </article>`;
+    }).join("");
+  } catch (error) {
+    console.error("Error loading noticias:", error);
+    grid.innerHTML = `<div class="glass-card rounded-2xl p-5 text-sm text-red-400 lg:col-span-3">No se pudieron cargar las noticias destacadas.</div>`;
+  }
+}
 
 function loadAll() {
   currentJornada = null;
@@ -58,7 +165,7 @@ function loadAll() {
 // === YouTube Live ===
 async function loadLive() {
   try {
-    const live = await api.get("/partidos/live");
+    const live = await api.get(withSeason("/partidos/live"));
     const container = document.getElementById("youtubeContainer");
     const placeholder = document.getElementById("videoPlaceholder");
     const liveBadgeHero = document.getElementById("liveBadgeHero");
@@ -96,7 +203,7 @@ async function loadLive() {
 
 async function loadNextMatch() {
   try {
-    const partidos = await api.get("/partidos?estado=pendiente");
+    const partidos = await api.get(withSeason("/partidos?estado=pendiente"));
     if (!partidos.length) return;
 
     // Sort by date+time to find the soonest
@@ -150,7 +257,7 @@ async function loadFixture() {
   const gridEl = document.getElementById("homeFixtureGrid");
 
   try {
-    const jornadas = await api.get(`/partidos/jornadas?categoria=${enc(cat)}&torneo=${enc(tor)}`);
+    const jornadas = await api.get(withSeason(`/partidos/jornadas?categoria=${enc(cat)}&torneo=${enc(tor)}`));
     tabsEl.innerHTML = "";
 
     if (!jornadas.length) {
@@ -192,7 +299,7 @@ async function renderFixtureJornada(jornada) {
   const tor = currentTorneo;
 
   try {
-    const partidos = await api.get(`/partidos?categoria=${enc(cat)}&torneo=${enc(tor)}&jornada=${jornada}`);
+    const partidos = await api.get(withSeason(`/partidos?categoria=${enc(cat)}&torneo=${enc(tor)}&jornada=${jornada}`));
     if (!partidos.length) {
       gridEl.innerHTML = `<p class="text-gray-500 col-span-full text-center py-8">No hay partidos en esta fecha</p>`;
       return;
@@ -244,8 +351,8 @@ async function loadTabla() {
 
   try {
     const [tabla, equipos] = await Promise.all([
-      api.get(`/tabla?categoria=${enc(cat)}`),
-      api.get(`/equipos?categoria=${enc(cat)}`),
+      api.get(withSeason(`/tabla?categoria=${enc(cat)}`)),
+      api.get(withSeason(`/equipos?categoria=${enc(cat)}`)),
     ]);
 
     const escudoMap = {};
@@ -289,7 +396,7 @@ async function loadGoleadores() {
   const grid = document.getElementById("homeGoleadoresGrid");
 
   try {
-    const data = await api.get(`/tabla/goleadores?categoria=${enc(cat)}`);
+    const data = await api.get(withSeason(`/tabla/goleadores?categoria=${enc(cat)}`));
     const top = data.slice(0, 15);
 
     if (!top.length) {
@@ -325,7 +432,7 @@ async function loadTarjetas() {
   const rojBody = document.getElementById("homeRojasBody");
 
   try {
-    const data = await api.get(`/tabla/tarjetas?categoria=${enc(cat)}`);
+    const data = await api.get(withSeason(`/tabla/tarjetas?categoria=${enc(cat)}`));
     const renderCards = (arr, body, field) => {
       const top = (arr || []).slice(0, 10);
       if (!top.length) {
@@ -352,7 +459,7 @@ async function loadTarjetas() {
 async function loadH2HEquipos() {
   const cat = currentCategoria;
   try {
-    const equipos = await api.get(`/equipos?categoria=${enc(cat)}`);
+    const equipos = await api.get(withSeason(`/equipos?categoria=${enc(cat)}`));
     const sel1 = document.getElementById("homeH2hTeam1");
     const sel2 = document.getElementById("homeH2hTeam2");
     const opts = `<option value="" disabled selected>Seleccionar equipo</option>` + equipos.map((e) => `<option value="${e.id}">${e.nombre}</option>`).join("");
@@ -372,7 +479,7 @@ async function compareH2H() {
 
   const cat = currentCategoria;
   try {
-    const data = await api.get(`/partidos/h2h?team1=${t1}&team2=${t2}&categoria=${enc(cat)}`);
+    const data = await api.get(withSeason(`/partidos/h2h?team1=${t1}&team2=${t2}&categoria=${enc(cat)}`));
     renderH2HResumen(data.resumen, t1, t2);
     renderH2HPartidos(data.partidos);
   } catch (e) {
@@ -453,4 +560,22 @@ function formatDate(dateStr) {
   } catch {
     return dateStr;
   }
+}
+
+function formatFullDate(dateStr) {
+  if (!dateStr) return "Sin fecha";
+  try {
+    return new Date(dateStr).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }

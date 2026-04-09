@@ -9,6 +9,7 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link href="shared-ui.css" rel="stylesheet"/>
   <script src="tailwind-config.js"></script>
   <style>
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
@@ -17,13 +18,13 @@
 </head>
 <body class="bg-surface text-on-surface font-body min-h-screen">
 <div id="sharedLayout" class="flex min-h-screen flex-col">
-  <main class="flex-1 overflow-y-auto p-4 md:p-8">
-    <div class="max-w-[1600px] mx-auto">
+  <main class="app-main flex-1 overflow-y-auto">
+    <div class="page-shell">
 
-      <div class="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
+      <div class="page-header">
         <div>
-          <h1 class="text-xl sm:text-2xl md:text-4xl font-black leading-tight tracking-[-0.033em] font-headline">Estadísticas de la Liga</h1>
-          <p class="text-on-surface-variant mt-1 sm:mt-2 text-sm sm:text-base">Temporada 2025/26 • Clasificación en tiempo real</p>
+          <h1 class="page-title">Estadísticas de la liga</h1>
+          <p class="page-subtitle">Lectura completa de posiciones, goleadores, tarjetas e históricos.</p>
         </div>
         <div class="flex gap-2">
           <div class="flex rounded-xl bg-primary/10 p-1">
@@ -53,7 +54,7 @@
       </div>
 
       <!-- Resultados por jornada -->
-      <section id="resultadosJornada" class="bg-surface-container-high border border-outline-variant/10 p-4 rounded-xl mb-6 hidden">
+      <section id="resultadosJornada" class="panel-card p-4 rounded-xl mb-6 hidden">
         <h2 class="text-xl font-semibold mb-3 font-headline">Resultados por Jornada</h2>
         <div id="jornadaTabs" class="flex flex-wrap gap-2 mb-4"></div>
         <div id="jornadaResultados" class="space-y-2"></div>
@@ -91,47 +92,19 @@
       </section>
 
       <!-- Tabla de posiciones -->
-      <section id="seccionTabla" class="bg-surface-container-high border border-outline-variant/10 p-3 sm:p-4 rounded-xl mb-4 sm:mb-6">
-        <h2 class="text-base sm:text-xl font-semibold mb-2 sm:mb-3 font-headline">Tabla de posiciones por categoría</h2>
-        <div class="flex flex-wrap gap-2 sm:gap-4 mb-3">
-          <button id="tabPrimera" class="px-2 sm:px-3 py-1 rounded-lg bg-primary text-on-primary text-xs sm:text-sm font-semibold">Primera</button>
-          <button id="tabTercera" class="px-2 sm:px-3 py-1 rounded-lg bg-primary/20 text-on-surface text-xs sm:text-sm font-semibold">Tercera</button>
-          <button id="tabSenior" class="px-2 sm:px-3 py-1 rounded-lg bg-primary/20 text-on-surface text-xs sm:text-sm font-semibold">Senior</button>
-        </div>
-        <div id="categoriaContainer">
-          <div id="primeraContainer" class="categoria-table">
-            <h3 class="font-semibold mb-2 text-sm sm:text-base font-headline">Primera</h3>
-            <div class="overflow-x-auto -mx-3 sm:mx-0">
-              <table class="w-full text-left border-collapse mb-4 text-xs sm:text-sm min-w-[540px]">
-                <thead class="bg-surface-container text-on-surface-variant text-xs uppercase"><tr><th class="px-1 sm:px-2 py-1">#</th><th class="px-1 sm:px-2 py-1">Equipo</th><th class="px-1 sm:px-2 py-1">P</th><th class="px-1 sm:px-2 py-1">PJ</th><th class="px-1 sm:px-2 py-1">PG</th><th class="px-1 sm:px-2 py-1">PE</th><th class="px-1 sm:px-2 py-1">PP</th><th class="px-1 sm:px-2 py-1">GF</th><th class="px-1 sm:px-2 py-1">GC</th><th class="px-1 sm:px-2 py-1">DG</th></tr></thead>
-                <tbody id="tablaPrimeraBody"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="terceraContainer" class="categoria-table hidden">
-            <h3 class="font-semibold mb-2 text-sm sm:text-base font-headline">Tercera</h3>
-            <div class="overflow-x-auto -mx-3 sm:mx-0">
-              <table class="w-full text-left border-collapse mb-4 text-xs sm:text-sm min-w-[540px]">
-                <thead class="bg-surface-container text-on-surface-variant text-xs uppercase"><tr><th class="px-1 sm:px-2 py-1">#</th><th class="px-1 sm:px-2 py-1">Equipo</th><th class="px-1 sm:px-2 py-1">P</th><th class="px-1 sm:px-2 py-1">PJ</th><th class="px-1 sm:px-2 py-1">PG</th><th class="px-1 sm:px-2 py-1">PE</th><th class="px-1 sm:px-2 py-1">PP</th><th class="px-1 sm:px-2 py-1">GF</th><th class="px-1 sm:px-2 py-1">GC</th><th class="px-1 sm:px-2 py-1">DG</th></tr></thead>
-                <tbody id="tablaTerceraBody"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="seniorContainer" class="categoria-table hidden">
-            <h3 class="font-semibold mb-2 text-sm sm:text-base font-headline">Senior</h3>
-            <div class="overflow-x-auto -mx-3 sm:mx-0">
-              <table class="w-full text-left border-collapse mb-4 text-xs sm:text-sm min-w-[540px]">
-                <thead class="bg-surface-container text-on-surface-variant text-xs uppercase"><tr><th class="px-1 sm:px-2 py-1">#</th><th class="px-1 sm:px-2 py-1">Equipo</th><th class="px-1 sm:px-2 py-1">P</th><th class="px-1 sm:px-2 py-1">PJ</th><th class="px-1 sm:px-2 py-1">PG</th><th class="px-1 sm:px-2 py-1">PE</th><th class="px-1 sm:px-2 py-1">PP</th><th class="px-1 sm:px-2 py-1">GF</th><th class="px-1 sm:px-2 py-1">GC</th><th class="px-1 sm:px-2 py-1">DG</th></tr></thead>
-                <tbody id="tablaSeniorBody"></tbody>
-              </table>
-            </div>
-          </div>
+      <section id="seccionTabla" class="app-table-shell p-3 sm:p-4 rounded-xl mb-4 sm:mb-6">
+        <h2 class="text-base sm:text-xl font-semibold mb-2 sm:mb-3 font-headline">Tabla de posiciones <span id="tablaCategoriaLabel" class="text-primary"></span></h2>
+        <div class="overflow-x-auto -mx-3 sm:mx-0">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm min-w-[540px]">
+            <thead class="bg-surface-container text-on-surface-variant text-xs uppercase"><tr><th class="px-1 sm:px-2 py-1">#</th><th class="px-1 sm:px-2 py-1">Equipo</th><th class="px-1 sm:px-2 py-1">P</th><th class="px-1 sm:px-2 py-1">PJ</th><th class="px-1 sm:px-2 py-1">PG</th><th class="px-1 sm:px-2 py-1">PE</th><th class="px-1 sm:px-2 py-1">PP</th><th class="px-1 sm:px-2 py-1">GF</th><th class="px-1 sm:px-2 py-1">GC</th><th class="px-1 sm:px-2 py-1">DG</th></tr></thead>
+            <tbody id="tablaPosicionesBody"></tbody>
+          </table>
         </div>
       </section>
 
       <!-- Goleadores -->
       <section id="seccionGoleadores" class="hidden">
-        <div class="bg-surface-container-high border border-outline-variant/10 p-3 sm:p-4 rounded-xl">
+        <div class="app-table-shell p-3 sm:p-4 rounded-xl">
           <h2 class="font-semibold mb-2 text-sm sm:text-base font-headline">Ranking de goleadores</h2>
           <div class="overflow-x-auto -mx-3 sm:mx-0">
             <table class="w-full text-xs sm:text-sm min-w-[400px]">
@@ -145,7 +118,7 @@
       <!-- Tarjetas -->
       <section id="seccionTarjetas" class="hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-          <div class="bg-surface-container-high border border-outline-variant/10 p-3 sm:p-4 rounded-xl">
+          <div class="app-table-shell p-3 sm:p-4 rounded-xl">
             <h2 class="font-semibold mb-2 text-sm sm:text-base font-headline">Tarjetas amarillas</h2>
             <div class="overflow-x-auto -mx-3 sm:mx-0">
               <table class="w-full text-xs sm:text-sm min-w-[360px]">
@@ -154,7 +127,7 @@
               </table>
             </div>
           </div>
-          <div class="bg-surface-container-high border border-outline-variant/10 p-3 sm:p-4 rounded-xl">
+          <div class="app-table-shell p-3 sm:p-4 rounded-xl">
             <h2 class="font-semibold mb-2 text-sm sm:text-base font-headline">Tarjetas rojas</h2>
             <div class="overflow-x-auto -mx-3 sm:mx-0">
               <table class="w-full text-xs sm:text-sm min-w-[360px]">
@@ -168,7 +141,7 @@
 
       <!-- Históricos H2H -->
       <section id="seccionHistoricos" class="hidden">
-        <div class="bg-surface-container-high border border-outline-variant/10 p-3 sm:p-4 rounded-xl mb-4 sm:mb-6">
+        <div class="panel-card p-3 sm:p-4 rounded-xl mb-4 sm:mb-6">
           <h2 class="text-base sm:text-xl font-semibold mb-3 font-headline">Historial entre equipos</h2>
           <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto] gap-2 sm:gap-3 items-end mb-4">
             <div>

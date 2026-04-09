@@ -1,0 +1,21 @@
+RewriteEngine On
+
+# Si el request es para la API
+RewriteCond %{REQUEST_URI} ^/api/
+RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+
+# Si el archivo o directorio existe (estáticos: frontend, assets, logos, sponsors)
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Assets estáticos
+RewriteRule ^assets/(.*)$ assets/$1 [L]
+RewriteRule ^logos/(.*)$ equipos/logos/$1 [L]
+RewriteRule ^sponsors/(.*)$ sponsors/$1 [L]
+
+# Raiz del sitio al index del frontend
+RewriteRule ^$ frontend/index.html [L]
+
+# Todo lo demás al frontend
+RewriteRule ^(.*)$ frontend/$1 [L]

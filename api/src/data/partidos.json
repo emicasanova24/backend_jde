@@ -1,0 +1,4 @@
+[
+  {"fecha":"2026-04-01","hora":"18:30","estadio":"Estadio Norte","localId":1,"visitanteId":2,"estado":"jugado","golesLocal":2,"golesVisitante":1,"amarillas":3,"rojas":0,"torneo":"Apertura","categoria":"Primera"},
+  {"fecha":"2026-04-05","hora":"20:00","estadio":"Estadio Centro","localId":2,"visitanteId":3,"estado":"pendiente","golesLocal":0,"golesVisitante":0,"amarillas":0,"rojas":0,"torneo":"Apertura","categoria":"Primera"}
+]

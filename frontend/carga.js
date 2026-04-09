@@ -1,3 +1,4 @@
+(function () {
 // === Auth & API ===
 const getAuthHeaders = () => {
   const headers = { "Content-Type": "application/json" };
@@ -6,11 +7,43 @@ const getAuthHeaders = () => {
   return headers;
 };
 
+async function request(path, options = {}) {
+  let response;
+  const url = path.startsWith("http") ? path : "/api" + path;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers: {
+        ...getAuthHeaders(),
+        ...(options.headers || {}),
+      },
+    });
+  } catch {
+    throw new Error("No se pudo conectar con el servidor");
+  }
+
+  const contentType = response.headers.get("content-type") || "";
+  let payload = null;
+
+  if (contentType.includes("application/json")) {
+    payload = await response.json();
+  } else {
+    const text = await response.text();
+    payload = text ? { message: text } : null;
+  }
+
+  if (!response.ok) {
+    throw new Error(payload?.error || payload?.message || `Error ${response.status}`);
+  }
+
+  return payload;
+}
+
 const api = {
-  get: (path) => fetch(path, { headers: getAuthHeaders() }).then((r) => r.json()),
-  post: (path, body) => fetch(path, { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(body) }).then((r) => r.json()),
-  put: (path, body) => fetch(path, { method: "PUT", headers: getAuthHeaders(), body: JSON.stringify(body) }).then((r) => r.json()),
-  del: (path) => fetch(path, { method: "DELETE", headers: getAuthHeaders() }).then((r) => r.json()),
+  get: (path) => request(path),
+  post: (path, body) => request(path, { method: "POST", body: JSON.stringify(body) }),
+  put: (path, body) => request(path, { method: "PUT", body: JSON.stringify(body) }),
+  del: (path) => request(path, { method: "DELETE" }),
 };
 
 // === State ===
@@ -55,7 +88,12 @@ function checkAuth() {
 async function loadEquipos() {
   const cat = getCategoria();
   if (!cat) return;
-  equiposCache = await api.get(`/equipos?categoria=${encodeURIComponent(cat)}`).catch(() => []);
+  try {
+    equiposCache = await api.get(`/equipos?categoria=${encodeURIComponent(cat)}`);
+  } catch (error) {
+    equiposCache = [];
+    showToast(error.message, "error");
+  }
 }
 
 // === Jornadas ===
@@ -65,9 +103,18 @@ async function loadJornadas() {
   if (!cat || !tor) return;
 
   await loadEquipos();
-
-  const jornadas = await api.get(`/partidos/jornadas?categoria=${encodeURIComponent(cat)}&torneo=${encodeURIComponent(tor)}`).catch(() => []);
   const container = $("jornadasContainer");
+  let jornadas = [];
+
+  try {
+    jornadas = await api.get(`/partidos/jornadas?categoria=${encodeURIComponent(cat)}&torneo=${encodeURIComponent(tor)}`);
+  } catch (error) {
+    container.innerHTML = "<p class='text-sm text-red-300'>No se pudieron cargar las jornadas.</p>";
+    $("jornadaDetail").classList.add("hidden");
+    showToast(error.message, "error");
+    return;
+  }
+
   container.innerHTML = "";
 
   if (!jornadas.length) {
@@ -126,10 +173,19 @@ async function crearJornada() {
 async function loadPartidosJornada(jornada) {
   const cat = getCategoria();
   const tor = getTorneo();
-  const partidos = await api.get(`/partidos?categoria=${encodeURIComponent(cat)}&torneo=${encodeURIComponent(tor)}&jornada=${jornada}`).catch(() => []);
-
   const container = $("partidosContainer");
   const noPartidos = $("noPartidos");
+  let partidos = [];
+
+  try {
+    partidos = await api.get(`/partidos?categoria=${encodeURIComponent(cat)}&torneo=${encodeURIComponent(tor)}&jornada=${jornada}`);
+  } catch (error) {
+    container.innerHTML = "<p class='text-sm text-red-300'>No se pudieron cargar los partidos de esta fecha.</p>";
+    noPartidos.classList.add("hidden");
+    showToast(error.message, "error");
+    return;
+  }
+
   container.innerHTML = "";
 
   if (!partidos.length) {
@@ -187,10 +243,14 @@ async function loadPartidosJornada(jornada) {
   container.querySelectorAll(".btnEliminar").forEach((btn) => {
     btn.addEventListener("click", async () => {
       if (!confirm("¿Eliminar este partido?")) return;
-      await api.del(`/partidos/${btn.dataset.id}`);
-      showToast("Partido eliminado");
-      await loadPartidosJornada(currentJornada);
-      await loadJornadas();
+      try {
+        await api.del(`/partidos/${btn.dataset.id}`);
+        showToast("Partido eliminado");
+        await loadPartidosJornada(currentJornada);
+        await loadJornadas();
+      } catch (error) {
+        showToast(error.message, "error");
+      }
     });
   });
 }
@@ -302,23 +362,24 @@ async function saveFixture() {
     return;
   }
 
-  let saved = 0;
-  for (const p of partidos) {
-    const result = await api.post("/partidos", {
-      ...p,
-      estado: "pendiente",
-      categoria: getCategoria(),
-      torneo: getTorneo(),
-      jornada: currentJornada,
+  try {
+    const result = await api.post("/partidos/bulk", {
+      partidos: partidos.map((partido) => ({
+        ...partido,
+        estado: "pendiente",
+        categoria: getCategoria(),
+        torneo: getTorneo(),
+        jornada: currentJornada,
+      })),
     });
-    if (!result.error) saved++;
-    else { showToast(result.error, "error"); return; }
-  }
 
-  hideFixtureBuilder();
-  showToast(`${saved} partido${saved > 1 ? "s" : ""} guardado${saved > 1 ? "s" : ""}`);
-  await loadPartidosJornada(currentJornada);
-  await loadJornadas();
+    hideFixtureBuilder();
+    showToast(`${result.total} partido${result.total > 1 ? "s" : ""} guardado${result.total > 1 ? "s" : ""}`);
+    await loadPartidosJornada(currentJornada);
+    await loadJornadas();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
 }
 
 // === Modal: Cargar resultado ===
@@ -341,19 +402,27 @@ async function openResultModal(partido) {
   $("resultVisitanteEscudo").src = partido.visitanteEscudo || getEscudo(partido.visitanteId);
 
   // Load existing eventos for this match
-  const existingEventos = await api.get(`/eventos?partido_id=${partido.id}`).catch(() => []);
+  let existingEventos = [];
+  let jugLocal = [];
+  let jugVisitante = [];
+
+  try {
+    [existingEventos, jugLocal, jugVisitante] = await Promise.all([
+      api.get(`/eventos?partido_id=${partido.id}`),
+      api.get(`/jugadores?equipo=${partido.localId}`),
+      api.get(`/jugadores?equipo=${partido.visitanteId}`),
+    ]);
+  } catch (error) {
+    showToast(error.message, "error");
+    return;
+  }
+
   eventosTemp = existingEventos.map((ev) => ({
     jugador_id: ev.jugador_id,
     equipo_id: ev.equipo_id,
     tipo: ev.tipo,
     jugador_nombre: ev.jugador_nombre || "?",
   }));
-
-  // Load players for both teams
-  const [jugLocal, jugVisitante] = await Promise.all([
-    api.get(`/jugadores?equipo=${partido.localId}`).catch(() => []),
-    api.get(`/jugadores?equipo=${partido.visitanteId}`).catch(() => []),
-  ]);
 
   renderPlayerList("golesLocalList", jugLocal, partido.localId, "gol");
   renderPlayerList("golesVisitanteList", jugVisitante, partido.visitanteId, "gol");
@@ -477,40 +546,74 @@ async function saveResult() {
   const partidoId = $("resultPartidoId").value;
   const golesLocal = Number($("resultGolesLocal").value) || 0;
   const golesVisitante = Number($("resultGolesVisitante").value) || 0;
-  const amarillas = eventosTemp.filter((e) => e.tipo === "amarilla").length;
-  const rojas = eventosTemp.filter((e) => e.tipo === "roja").length;
 
   if (!confirm(`¿Guardar resultado ${golesLocal} - ${golesVisitante}?`)) return;
 
-  // 1. Update partido
-  const updateResult = await api.put(`/partidos/${partidoId}`, {
-    golesLocal,
-    golesVisitante,
-    amarillas,
-    rojas,
-    estado: "jugado",
-  });
+  try {
+    await api.put(`/partidos/${partidoId}/resultado`, {
+      golesLocal,
+      golesVisitante,
+      eventos: eventosTemp.map((ev) => ({
+        jugador_id: ev.jugador_id,
+        equipo_id: ev.equipo_id,
+        tipo: ev.tipo,
+      })),
+    });
 
-  if (updateResult.error) { showToast(updateResult.error, "error"); return; }
+    $("resultModal").classList.add("hidden");
+    showToast("Resultado guardado correctamente");
+    await loadPartidosJornada(currentJornada);
+    await loadJornadas();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
 
-  // 2. Delete existing eventos for this match
-  await api.del(`/eventos/partido/${partidoId}`);
-
-  // 3. Create new eventos
-  if (eventosTemp.length) {
-    const eventosPayload = eventosTemp.map((ev) => ({
-      partido_id: Number(partidoId),
-      jugador_id: ev.jugador_id,
-      equipo_id: ev.equipo_id,
-      tipo: ev.tipo,
-    }));
-    await api.post("/eventos/bulk", { eventos: eventosPayload });
+async function generarSemanarioHtml() {
+  const torneo = getTorneo();
+  if (!torneo) {
+    showToast("Seleccioná un torneo antes de generar el semanario", "error");
+    return;
   }
 
-  $("resultModal").classList.add("hidden");
-  showToast("Resultado guardado correctamente");
-  await loadPartidosJornada(currentJornada);
-  await loadJornadas();
+  const generarBtn = $("generarSemanarioBtn");
+  const copiarBtn = $("copiarSemanarioBtn");
+  const output = $("semanarioHtmlOutput");
+  const meta = $("semanarioHtmlMeta");
+
+  try {
+    generarBtn.disabled = true;
+    generarBtn.textContent = "Generando...";
+
+    const query = new URLSearchParams({ torneo });
+    const response = await api.get(`/setup/semanario-html?${query.toString()}`);
+
+    output.value = response?.html || "";
+    meta.textContent = `Actualizado para ${response?.torneo || torneo} el ${new Date(response.generatedAt).toLocaleString("es-AR")}`;
+    meta.classList.remove("hidden");
+    copiarBtn.disabled = !output.value;
+    showToast("HTML generado correctamente");
+  } catch (error) {
+    showToast(error.message || "No se pudo generar el semanario", "error");
+  } finally {
+    generarBtn.disabled = false;
+    generarBtn.textContent = "Generar HTML";
+  }
+}
+
+async function copiarSemanarioHtml() {
+  const output = $("semanarioHtmlOutput");
+  if (!output.value) {
+    showToast("Primero generá el HTML", "error");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(output.value);
+    showToast("HTML copiado");
+  } catch {
+    showToast("No se pudo copiar el HTML", "error");
+  }
 }
 
 // === Filter logic ===
@@ -537,6 +640,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Filters
   $("categoriaFiltro").addEventListener("change", onFilterChange);
   $("torneoFiltro").addEventListener("change", onFilterChange);
+  $("generarSemanarioBtn").addEventListener("click", generarSemanarioHtml);
+  $("copiarSemanarioBtn").addEventListener("click", copiarSemanarioHtml);
+  onFilterChange();
 
   // Jornada
   $("nuevaJornadaBtn").addEventListener("click", crearJornada);
@@ -556,11 +662,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("closeResultModal").addEventListener("click", () => $("resultModal").classList.add("hidden"));
   $("cancelResult").addEventListener("click", () => $("resultModal").classList.add("hidden"));
   $("saveResult").addEventListener("click", saveResult);
-
-  // Logout  
-  $("logoutBtn").addEventListener("click", () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("accountProfile");
-    window.location.href = "login.html";
-  });
 });
+
+})();
+

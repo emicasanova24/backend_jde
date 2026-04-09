@@ -1,0 +1,5 @@
+[
+  {"nombre":"Juan Pérez","posicion":"Delantero","equipo":1,"goles":5,"amarillas":1,"rojas":0},
+  {"nombre":"Luis Gómez","posicion":"Volante","equipo":2,"goles":2,"amarillas":2,"rojas":0},
+  {"nombre":"Pablo Campos","posicion":"Defensor","equipo":3,"goles":1,"amarillas":3,"rojas":1}
+]

@@ -1,6 +1,7 @@
 const fetch = globalThis.fetch || require('node-fetch');
 
-const API_BASE = process.env.API_BASE || 'http://localhost:3000';
+// Script legado manual: fuera del runtime del proyecto.
+const API_BASE = process.env.API_BASE || 'http://localhost:8000/api';
 
 const teams = [
   { name: 'Deportivo Maza', players: ['Arboleda Angel','Sarasola Matias','Labín Juan','Gertner Genaro','Fernandez Benjamín','Moggia Lucio','Duckardt Sebastian','Risso Jeremias','Kuwalsuk Angel','Rodi Matías','Ditzel Juan','Rivero Cayetano','Alvarez Francisco','Gonzalez Fernando','Paturlane Santos','Herrera Facundo'] },

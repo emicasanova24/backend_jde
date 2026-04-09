@@ -1,0 +1,14 @@
+{
+  "name": "jde/backend",
+  "description": "Liga JDE - Backend PHP",
+  "type": "project",
+  "require": {
+    "php": ">=8.1",
+    "firebase/php-jwt": "^6.10"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    }
+  }
+}

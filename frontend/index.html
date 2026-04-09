@@ -11,8 +11,9 @@
 <meta property="og:image" content="/assets/logo.png">
 <meta property="og:type" content="website">
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="shared-ui.css" rel="stylesheet"/>
 <script>
 tailwind.config = {
   darkMode: "class",
@@ -24,14 +25,16 @@ tailwind.config = {
         "background-dark": "#120d1a",
         "card-dark": "#1a1225",
       },
-      fontFamily: { sans: ["Public Sans", "sans-serif"] },
+      fontFamily: {
+        sans: ["Manrope", "sans-serif"],
+        headline: ["Lexend", "sans-serif"],
+        body: ["Manrope", "sans-serif"],
+      },
     },
   },
 };
 </script>
 <style>
-body { font-family: "Public Sans", sans-serif; }
-.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; color: #ffffff; }
 select { background-color: #1e293b !important; color: #f8fafc !important; }
 
 /* Glass effect */
@@ -72,49 +75,72 @@ select { background-color: #1e293b !important; color: #f8fafc !important; }
   transform: scale(1.1);
 }
 
-/* Mobile menu */
-#mobileMenu.open { max-height: 300px; opacity: 1; }
-#mobileMenu { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.3s, opacity 0.3s; }
-
 /* Smooth scroll */
 html { scroll-behavior: smooth; }
 </style>
 </head>
-<body class="bg-background-dark text-white antialiased selection:bg-primary selection:text-white">
+<body class="app-public-body bg-background-dark text-white antialiased selection:bg-primary selection:text-white">
 
 <!-- HEADER -->
-<header class="fixed top-0 w-full z-50 bg-background-dark/80 backdrop-blur-md border-b border-white/10">
-  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
-    <a href="/" class="flex items-center gap-2">
-      <img src="/assets/logo.png" alt="Juego de Equipo" class="h-9 sm:h-11 w-auto object-contain"/>
-      <span class="text-xl sm:text-2xl font-black tracking-tight uppercase">Juego de <span class="text-primary">Equipo</span></span>
+<header class="public-header fixed top-0 w-full z-50">
+  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[4.5rem] sm:h-20 flex items-center justify-between gap-4">
+    <a href="/" class="public-brand">
+      <span class="public-brand-mark surface-glow">
+        <img src="/assets/logo.png" alt="Juego de Equipo" class="h-8 sm:h-9 w-auto object-contain"/>
+      </span>
+      <span class="public-brand-wordmark">
+        <span class="text-[10px] font-extrabold uppercase tracking-[0.28em] text-white/45">Liga regional</span>
+        <span class="text-base sm:text-xl font-black tracking-tight uppercase font-headline">Juego de <span class="text-primary">Equipo</span></span>
+      </span>
     </a>
     <div class="hidden md:flex items-center space-x-6 lg:space-x-8">
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#fixture">Fixture</a>
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tabla">Tabla</a>
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#goleadores">Goleadores</a>
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tarjetas">Tarjetas</a>
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#h2h">H2H</a>
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="estadisticas.html">Estadísticas</a>
+      <a class="public-nav-link" href="#fixture">Fixture</a>
+      <a class="public-nav-link" href="#tabla">Tabla</a>
+      <a class="public-nav-link" href="#goleadores">Goleadores</a>
+      <a class="public-nav-link" href="#tarjetas">Tarjetas</a>
+      <a class="public-nav-link" href="#h2h">H2H</a>
+      <a class="public-nav-link" href="estadisticas.html">Estadísticas</a>
     </div>
-    <button id="menuToggle" class="md:hidden text-white">
-      <span class="material-symbols-outlined text-[28px]">menu</span>
-    </button>
+    <div class="flex items-center gap-2 sm:gap-3">
+      <a href="login.html" class="hidden md:inline-flex app-button-secondary text-sm">Administrar</a>
+      <button id="menuToggle" aria-controls="mobileMenu" aria-expanded="false" class="public-menu-button md:hidden">
+        <span class="material-symbols-outlined text-[24px]">menu</span>
+      </button>
+    </div>
   </nav>
-  <div id="mobileMenu" class="md:hidden bg-background-dark/95 border-t border-white/5 px-4">
-    <div class="flex flex-col gap-3 py-4">
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#fixture">Fixture</a>
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tabla">Tabla</a>
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#goleadores">Goleadores</a>
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tarjetas">Tarjetas</a>
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#h2h">H2H</a>
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="estadisticas.html">Estadísticas</a>
+  <div id="mobileMenuOverlay" class="public-menu-overlay md:hidden"></div>
+  <div id="mobileMenu" aria-hidden="true" class="public-menu-panel md:hidden">
+    <div class="flex items-center justify-between gap-3 border-b border-white/8 pb-4">
+      <div class="flex items-center gap-3">
+        <span class="public-brand-mark">
+          <img src="/assets/logo.png" alt="Juego de Equipo" class="h-8 w-auto object-contain"/>
+        </span>
+        <div>
+          <span class="block text-[10px] font-extrabold uppercase tracking-[0.28em] text-white/45">Navegacion</span>
+          <span class="text-sm font-bold font-headline text-white">Juego de Equipo</span>
+        </div>
+      </div>
+      <button id="menuClose" class="public-menu-button" type="button">
+        <span class="material-symbols-outlined text-[22px]">close</span>
+      </button>
+    </div>
+    <div class="flex flex-col gap-3">
+      <a class="public-mobile-link" href="#fixture"><span>Fixture</span><span class="material-symbols-outlined text-[18px]">arrow_outward</span></a>
+      <a class="public-mobile-link" href="#tabla"><span>Tabla</span><span class="material-symbols-outlined text-[18px]">arrow_outward</span></a>
+      <a class="public-mobile-link" href="#goleadores"><span>Goleadores</span><span class="material-symbols-outlined text-[18px]">arrow_outward</span></a>
+      <a class="public-mobile-link" href="#tarjetas"><span>Tarjetas</span><span class="material-symbols-outlined text-[18px]">arrow_outward</span></a>
+      <a class="public-mobile-link" href="#h2h"><span>H2H</span><span class="material-symbols-outlined text-[18px]">arrow_outward</span></a>
+      <a class="public-mobile-link" href="estadisticas.html"><span>Estadísticas</span><span class="material-symbols-outlined text-[18px]">arrow_forward</span></a>
+    </div>
+    <div class="mt-auto rounded-2xl border border-white/8 bg-white/4 p-4">
+      <p class="text-sm text-white/70 mb-3">Administración y carga interna de la liga.</p>
+      <a href="login.html" class="app-button w-full text-sm">Ingresar al panel</a>
     </div>
   </div>
 </header>
 
 <!-- HERO + YOUTUBE -->
-<section class="relative pt-24 sm:pt-32 pb-8 sm:pb-12 overflow-hidden" id="hero">
+<section class="public-hero-shell relative pt-24 sm:pt-32 pb-8 sm:pb-12 overflow-hidden" id="hero">
   <!-- Background blurs -->
   <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden">
     <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/25 blur-[120px] rounded-full"></div>
@@ -130,7 +156,7 @@ html { scroll-behavior: smooth; }
         </div>
         <div id="noLiveBadge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest mb-6">
           <span class="material-symbols-outlined text-[14px]">sports_soccer</span>
-          Temporada 2025/26
+          <span id="homeSeasonBadge">Temporada 2025/26</span>
         </div>
         <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black mb-4 sm:mb-6 leading-[1.1] uppercase">
           Viví Cada <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">Partido</span>
@@ -212,6 +238,26 @@ html { scroll-behavior: smooth; }
   </div>
 </div>
 
+<!-- NEWS -->
+<section class="py-10 sm:py-14" id="noticiasHomeSection">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="panel-inline-stack mb-6 sm:mb-8">
+      <div>
+        <span class="section-chip mb-3"><span class="material-symbols-outlined text-[14px]">newspaper</span>Editorial</span>
+        <h2 class="text-2xl sm:text-3xl font-black uppercase mb-1 font-headline">Noticias <span class="text-primary">Destacadas</span></h2>
+        <p class="text-gray-500 text-sm">Cobertura, análisis y contexto periodístico de la temporada <span id="homeSeasonInline">2025/26</span>.</p>
+      </div>
+      <div class="text-xs sm:text-sm text-gray-500">
+        <span class="font-semibold text-white/80">Orden editorial</span>
+        <span class="ml-2">Selección manual de portada</span>
+      </div>
+    </div>
+    <div id="homeNoticiasGrid" class="grid gap-4 sm:gap-6 lg:grid-cols-3">
+      <div class="glass-card rounded-2xl p-5 text-sm text-gray-500 lg:col-span-3">Cargando noticias destacadas...</div>
+    </div>
+  </div>
+</section>
+
 <!-- CATEGORY SELECTOR (sticky) -->
 <div class="sticky top-16 sm:top-20 z-40 bg-background-dark/90 backdrop-blur-md border-b border-white/5 py-3">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center gap-3 sm:gap-4">
@@ -222,6 +268,8 @@ html { scroll-behavior: smooth; }
       <button data-cat="Senior" class="cat-tab px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all text-gray-400 hover:text-white">Senior</button>
     </div>
     <div class="flex items-center gap-2 ml-auto">
+      <span class="text-xs text-gray-500 hidden sm:inline">Temporada:</span>
+      <span id="homeSeasonPill" class="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs sm:text-sm font-semibold text-white/80">2025/26</span>
       <span class="text-xs text-gray-500 hidden sm:inline">Torneo:</span>
       <select id="homeTorneo" class="border border-white/10 rounded-lg px-3 py-2 text-sm bg-card-dark">
         <option value="Apertura">Apertura</option>
@@ -367,7 +415,7 @@ html { scroll-behavior: smooth; }
       <div class="sm:col-span-2">
         <div class="flex items-center gap-2 mb-4">
           <img src="/assets/logo.png" alt="Juego de Equipo" class="h-8 w-auto object-contain"/>
-          <span class="text-lg font-black uppercase tracking-tight">Juego de <span class="text-primary">Equipo</span></span>
+          <span class="mobile-hide-wordmark text-lg font-black uppercase tracking-tight font-headline">Juego de <span class="text-primary">Equipo</span></span>
         </div>
         <p class="text-gray-500 max-w-sm mb-6 text-sm">La liga de fútbol. Seguí todos los resultados, posiciones y goleadores en tiempo real.</p>
         <div class="flex gap-3">
