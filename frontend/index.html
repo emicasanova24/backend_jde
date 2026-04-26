@@ -6,14 +6,20 @@
 <title>Juego de Equipo — Liga de Fútbol</title>
 <link rel="icon" type="image/png" href="/assets/logo.png">
 <meta name="description" content="Juego de Equipo — Toda la info de la liga: fixture, tabla de posiciones, goleadores, tarjetas y transmisiones en vivo.">
+<meta property="og:site_name" content="Juego de Equipo">
 <meta property="og:title" content="Juego de Equipo — Liga de Fútbol">
-<meta property="og:description" content="Fixture, tabla de posiciones, goleadores, tarjetas y transmisiones en vivo.">
-<meta property="og:image" content="/assets/logo.png">
+<meta property="og:description" content="Juego de Equipo — Toda la info de la liga: fixture, tabla de posiciones, goleadores, tarjetas y transmisiones en vivo.">
+<meta property="og:image" content="/assets/share-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Juego de Equipo — Liga de Fútbol">
+<meta name="twitter:description" content="Juego de Equipo — Toda la info de la liga: fixture, tabla de posiciones, goleadores, tarjetas y transmisiones en vivo.">
+<meta name="twitter:image" content="/assets/share-default.png">
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-<link href="shared-ui.css" rel="stylesheet"/>
 <script>
 tailwind.config = {
   darkMode: "class",
@@ -25,16 +31,14 @@ tailwind.config = {
         "background-dark": "#120d1a",
         "card-dark": "#1a1225",
       },
-      fontFamily: {
-        sans: ["Manrope", "sans-serif"],
-        headline: ["Lexend", "sans-serif"],
-        body: ["Manrope", "sans-serif"],
-      },
+      fontFamily: { sans: ["Public Sans", "sans-serif"] },
     },
   },
 };
 </script>
 <style>
+body { font-family: "Public Sans", sans-serif; }
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; color: #ffffff; }
 select { background-color: #1e293b !important; color: #f8fafc !important; }
 
 /* Glass effect */
@@ -75,72 +79,47 @@ select { background-color: #1e293b !important; color: #f8fafc !important; }
   transform: scale(1.1);
 }
 
+/* Mobile menu */
+#mobileMenu.open { max-height: 300px; opacity: 1; }
+#mobileMenu { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.3s, opacity 0.3s; }
+
 /* Smooth scroll */
 html { scroll-behavior: smooth; }
 </style>
 </head>
-<body class="app-public-body bg-background-dark text-white antialiased selection:bg-primary selection:text-white">
+<body class="bg-background-dark text-white antialiased selection:bg-primary selection:text-white">
 
 <!-- HEADER -->
-<header class="public-header fixed top-0 w-full z-50">
-  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[4.5rem] sm:h-20 flex items-center justify-between gap-4">
-    <a href="/" class="public-brand">
-      <span class="public-brand-mark surface-glow">
-        <img src="/assets/logo.png" alt="Juego de Equipo" class="h-8 sm:h-9 w-auto object-contain"/>
-      </span>
-      <span class="public-brand-wordmark">
-        <span class="text-[10px] font-extrabold uppercase tracking-[0.28em] text-white/45">Liga regional</span>
-        <span class="text-base sm:text-xl font-black tracking-tight uppercase font-headline">Juego de <span class="text-primary">Equipo</span></span>
-      </span>
+<header class="fixed top-0 w-full z-50 bg-background-dark/80 backdrop-blur-md border-b border-white/10">
+  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2">
+      <img src="/assets/logo.png" alt="Juego de Equipo" class="h-9 sm:h-11 w-auto object-contain"/>
+      <span class="text-xl sm:text-2xl font-black tracking-tight uppercase">Juego de <span class="text-primary">Equipo</span></span>
     </a>
     <div class="hidden md:flex items-center space-x-6 lg:space-x-8">
-      <a class="public-nav-link" href="#fixture">Fixture</a>
-      <a class="public-nav-link" href="#tabla">Tabla</a>
-      <a class="public-nav-link" href="#goleadores">Goleadores</a>
-      <a class="public-nav-link" href="#tarjetas">Tarjetas</a>
-      <a class="public-nav-link" href="#h2h">H2H</a>
-      <a class="public-nav-link" href="estadisticas.html">Estadísticas</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#fixture">Fixture</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tabla">Tabla</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#goleadores">Goleadores</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tarjetas">Tarjetas</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#h2h">H2H</a>
     </div>
-    <div class="flex items-center gap-2 sm:gap-3">
-      <a href="login.html" class="hidden md:inline-flex app-button-secondary text-sm">Administrar</a>
-      <button id="menuToggle" aria-controls="mobileMenu" aria-expanded="false" class="public-menu-button md:hidden">
-        <span class="material-symbols-outlined text-[24px]">menu</span>
-      </button>
-    </div>
+    <button id="menuToggle" class="md:hidden text-white">
+      <span class="material-symbols-outlined text-[28px]">menu</span>
+    </button>
   </nav>
-  <div id="mobileMenuOverlay" class="public-menu-overlay md:hidden"></div>
-  <div id="mobileMenu" aria-hidden="true" class="public-menu-panel md:hidden">
-    <div class="flex items-center justify-between gap-3 border-b border-white/8 pb-4">
-      <div class="flex items-center gap-3">
-        <span class="public-brand-mark">
-          <img src="/assets/logo.png" alt="Juego de Equipo" class="h-8 w-auto object-contain"/>
-        </span>
-        <div>
-          <span class="block text-[10px] font-extrabold uppercase tracking-[0.28em] text-white/45">Navegacion</span>
-          <span class="text-sm font-bold font-headline text-white">Juego de Equipo</span>
-        </div>
-      </div>
-      <button id="menuClose" class="public-menu-button" type="button">
-        <span class="material-symbols-outlined text-[22px]">close</span>
-      </button>
-    </div>
-    <div class="flex flex-col gap-3">
-      <a class="public-mobile-link" href="#fixture"><span>Fixture</span><span class="material-symbols-outlined text-[18px]">arrow_outward</span></a>
-      <a class="public-mobile-link" href="#tabla"><span>Tabla</span><span class="material-symbols-outlined text-[18px]">arrow_outward</span></a>
-      <a class="public-mobile-link" href="#goleadores"><span>Goleadores</span><span class="material-symbols-outlined text-[18px]">arrow_outward</span></a>
-      <a class="public-mobile-link" href="#tarjetas"><span>Tarjetas</span><span class="material-symbols-outlined text-[18px]">arrow_outward</span></a>
-      <a class="public-mobile-link" href="#h2h"><span>H2H</span><span class="material-symbols-outlined text-[18px]">arrow_outward</span></a>
-      <a class="public-mobile-link" href="estadisticas.html"><span>Estadísticas</span><span class="material-symbols-outlined text-[18px]">arrow_forward</span></a>
-    </div>
-    <div class="mt-auto rounded-2xl border border-white/8 bg-white/4 p-4">
-      <p class="text-sm text-white/70 mb-3">Administración y carga interna de la liga.</p>
-      <a href="login.html" class="app-button w-full text-sm">Ingresar al panel</a>
+  <div id="mobileMenu" class="md:hidden bg-background-dark/95 border-t border-white/5 px-4">
+    <div class="flex flex-col gap-3 py-4">
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#fixture">Fixture</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tabla">Tabla</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#goleadores">Goleadores</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tarjetas">Tarjetas</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#h2h">H2H</a>
     </div>
   </div>
 </header>
 
 <!-- HERO + YOUTUBE -->
-<section class="public-hero-shell relative pt-24 sm:pt-32 pb-8 sm:pb-12 overflow-hidden" id="hero">
+<section class="relative pt-24 sm:pt-32 pb-8 sm:pb-12 overflow-hidden" id="hero">
   <!-- Background blurs -->
   <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden">
     <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/25 blur-[120px] rounded-full"></div>
@@ -156,7 +135,7 @@ html { scroll-behavior: smooth; }
         </div>
         <div id="noLiveBadge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest mb-6">
           <span class="material-symbols-outlined text-[14px]">sports_soccer</span>
-          <span id="homeSeasonBadge">Temporada 2025/26</span>
+          Temporada 2025/26
         </div>
         <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black mb-4 sm:mb-6 leading-[1.1] uppercase">
           Viví Cada <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">Partido</span>
@@ -179,6 +158,10 @@ html { scroll-behavior: smooth; }
             <div id="nextMatchInfo" class="text-center hidden">
               <p class="text-gray-400 text-xs mb-2">Próximo partido</p>
               <div id="nextMatchDetail" class="flex items-center gap-3 text-sm font-bold"></div>
+              <a id="nextMatchBroadcast" href="#" target="_blank" rel="noopener noreferrer" class="hidden mt-3 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold text-primary hover:bg-primary/20 transition-colors">
+                <span class="material-symbols-outlined text-[14px]">live_tv</span>
+                Ver transmisión
+              </a>
             </div>
           </div>
         </div>
@@ -193,70 +176,50 @@ html { scroll-behavior: smooth; }
 <!-- SPONSORS MARQUEE -->
 <div class="w-full py-8 sm:py-12" id="sponsors">
   <p class="text-center text-[10px] font-bold tracking-[0.2em] text-gray-600 uppercase mb-4">Sponsors Oficiales</p>
-  <div class="w-[90%] sm:w-[80%] mx-auto glass rounded-2xl overflow-hidden py-4 sm:py-6 px-2">
+  <div class="max-w-7xl mx-auto glass rounded-2xl overflow-hidden py-4 sm:py-6 px-2">
     <div class="marquee-track">
-      <img src="/sponsors/bunker.png" alt="Bunker" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/carnes.png" alt="Carnes" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/dale.png" alt="Dale" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/dt.png" alt="DT" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/etn.png" alt="ETN" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/forrajeria.png" alt="Forrajería" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/fraile.png" alt="Fraile" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/ganadera.png" alt="Ganadera" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/huentru.png" alt="Huentru" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/iglesias.png" alt="Iglesias" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/le.png" alt="LE" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/Mateo%20-%20alivelatore.png" alt="Mateo Alivelatore" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/mateo.png" alt="Mateo" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/mellizos.png" alt="Mellizos" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/monchi.png" alt="Monchi" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/petete.png" alt="Petete" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/pizza.png" alt="Pizza" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/PUBLI.png" alt="Publi" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/sata.png" alt="Sata" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/1.png" alt="Sponsor 1" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/2.png" alt="Sponsor 2" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/3.png" alt="Sponsor 3" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/4.png" alt="Sponsor 4" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/5.png" alt="Sponsor 5" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/6.png" alt="Sponsor 6" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/7.png" alt="Sponsor 7" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/8.png" alt="Sponsor 8" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/9.png" alt="Sponsor 9" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/10.png" alt="Sponsor 10" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/11.png" alt="Sponsor 11" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/12.png" alt="Sponsor 12" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/13.png" alt="Sponsor 13" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/14.png" alt="Sponsor 14" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/15.png" alt="Sponsor 15" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/16.png" alt="Sponsor 16" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/17.png" alt="Sponsor 17" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/18.png" alt="Sponsor 18" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/19.png" alt="Sponsor 19" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
       <!-- Duplicate for seamless loop -->
-      <img src="/sponsors/bunker.png" alt="Bunker" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/carnes.png" alt="Carnes" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/dale.png" alt="Dale" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/dt.png" alt="DT" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/etn.png" alt="ETN" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/forrajeria.png" alt="Forrajería" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/fraile.png" alt="Fraile" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/ganadera.png" alt="Ganadera" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/huentru.png" alt="Huentru" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/iglesias.png" alt="Iglesias" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/le.png" alt="LE" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/Mateo%20-%20alivelatore.png" alt="Mateo Alivelatore" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/mateo.png" alt="Mateo" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/mellizos.png" alt="Mellizos" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/monchi.png" alt="Monchi" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/petete.png" alt="Petete" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/pizza.png" alt="Pizza" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/PUBLI.png" alt="Publi" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
-      <img src="/sponsors/sata.png" alt="Sata" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/1.png" alt="Sponsor 1" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/2.png" alt="Sponsor 2" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/3.png" alt="Sponsor 3" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/4.png" alt="Sponsor 4" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/5.png" alt="Sponsor 5" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/6.png" alt="Sponsor 6" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/7.png" alt="Sponsor 7" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/8.png" alt="Sponsor 8" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/9.png" alt="Sponsor 9" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/10.png" alt="Sponsor 10" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/11.png" alt="Sponsor 11" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/12.png" alt="Sponsor 12" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/13.png" alt="Sponsor 13" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/14.png" alt="Sponsor 14" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/15.png" alt="Sponsor 15" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/16.png" alt="Sponsor 16" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/17.png" alt="Sponsor 17" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/18.png" alt="Sponsor 18" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/19.png" alt="Sponsor 19" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
     </div>
   </div>
 </div>
-
-<!-- NEWS -->
-<section class="py-10 sm:py-14" id="noticiasHomeSection">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="panel-inline-stack mb-6 sm:mb-8">
-      <div>
-        <span class="section-chip mb-3"><span class="material-symbols-outlined text-[14px]">newspaper</span>Editorial</span>
-        <h2 class="text-2xl sm:text-3xl font-black uppercase mb-1 font-headline">Noticias <span class="text-primary">Destacadas</span></h2>
-        <p class="text-gray-500 text-sm">Cobertura, análisis y contexto periodístico de la temporada <span id="homeSeasonInline">2025/26</span>.</p>
-      </div>
-      <div class="text-xs sm:text-sm text-gray-500">
-        <span class="font-semibold text-white/80">Orden editorial</span>
-        <span class="ml-2">Selección manual de portada</span>
-      </div>
-    </div>
-    <div id="homeNoticiasGrid" class="grid gap-4 sm:gap-6 lg:grid-cols-3">
-      <div class="glass-card rounded-2xl p-5 text-sm text-gray-500 lg:col-span-3">Cargando noticias destacadas...</div>
-    </div>
-  </div>
-</section>
 
 <!-- CATEGORY SELECTOR (sticky) -->
 <div class="sticky top-16 sm:top-20 z-40 bg-background-dark/90 backdrop-blur-md border-b border-white/5 py-3">
@@ -268,8 +231,6 @@ html { scroll-behavior: smooth; }
       <button data-cat="Senior" class="cat-tab px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all text-gray-400 hover:text-white">Senior</button>
     </div>
     <div class="flex items-center gap-2 ml-auto">
-      <span class="text-xs text-gray-500 hidden sm:inline">Temporada:</span>
-      <span id="homeSeasonPill" class="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs sm:text-sm font-semibold text-white/80">2025/26</span>
       <span class="text-xs text-gray-500 hidden sm:inline">Torneo:</span>
       <select id="homeTorneo" class="border border-white/10 rounded-lg px-3 py-2 text-sm bg-card-dark">
         <option value="Apertura">Apertura</option>
@@ -415,7 +376,6 @@ html { scroll-behavior: smooth; }
       <div class="sm:col-span-2">
         <div class="flex items-center gap-2 mb-4">
           <img src="/assets/logo.png" alt="Juego de Equipo" class="h-8 w-auto object-contain"/>
-          <span class="mobile-hide-wordmark text-lg font-black uppercase tracking-tight font-headline">Juego de <span class="text-primary">Equipo</span></span>
         </div>
         <p class="text-gray-500 max-w-sm mb-6 text-sm">La liga de fútbol. Seguí todos los resultados, posiciones y goleadores en tiempo real.</p>
         <div class="flex gap-3">
@@ -439,7 +399,6 @@ html { scroll-behavior: smooth; }
       <div>
         <h4 class="font-bold uppercase text-xs tracking-widest mb-4 text-gray-400">Links</h4>
         <ul class="space-y-3 text-sm text-gray-500">
-          <li><a class="hover:text-white transition-colors" href="estadisticas.html">Estadísticas</a></li>
           <li><a class="hover:text-white transition-colors" href="#h2h">Históricos H2H</a></li>
         </ul>
       </div>
@@ -447,15 +406,26 @@ html { scroll-behavior: smooth; }
     <!-- Footer sponsors mini -->
     <div class="border-t border-white/5 pt-6 mb-6">
       <p class="text-[9px] font-bold tracking-widest text-gray-600 uppercase text-center mb-3">Sponsors</p>
-      <div class="flex flex-wrap justify-center gap-4 sm:gap-6 opacity-40">
-        <img src="/sponsors/bunker.png" alt="" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/dale.png" alt="" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/forrajeria.png" alt="" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/ganadera.png" alt="" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/huentru.png" alt="" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/petete.png" alt="" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/pizza.png" alt="" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/sata.png" alt="" class="h-6 sm:h-8 object-contain grayscale"/>
+      <div class="flex flex-wrap justify-center gap-3 sm:gap-4 opacity-40">
+        <img src="/sponsors/1.png" alt="Sponsor 1" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/2.png" alt="Sponsor 2" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/3.png" alt="Sponsor 3" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/4.png" alt="Sponsor 4" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/5.png" alt="Sponsor 5" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/6.png" alt="Sponsor 6" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/7.png" alt="Sponsor 7" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/8.png" alt="Sponsor 8" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/9.png" alt="Sponsor 9" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/10.png" alt="Sponsor 10" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/11.png" alt="Sponsor 11" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/12.png" alt="Sponsor 12" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/13.png" alt="Sponsor 13" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/14.png" alt="Sponsor 14" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/15.png" alt="Sponsor 15" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/16.png" alt="Sponsor 16" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/17.png" alt="Sponsor 17" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/18.png" alt="Sponsor 18" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/19.png" alt="Sponsor 19" class="h-6 sm:h-8 object-contain grayscale"/>
       </div>
     </div>
     <div class="pt-6 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-gray-600">

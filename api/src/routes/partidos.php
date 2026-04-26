@@ -7,44 +7,271 @@ use App\Request;
 use App\Response;
 
 use function App\Middleware\authMiddleware;
-use function App\resolveSeasonId;
 
 require_once __DIR__ . '/../middleware/auth.php';
-require_once __DIR__ . '/../Season.php';
 
-const EVENT_TYPES = ['gol', 'amarilla', 'roja'];
+const EVENT_TYPES = ['gol', 'autogol', 'amarilla', 'roja'];
+
+function normalizePartidoEscudo(?string $escudo): string {
+    $path = trim((string) $escudo);
+    if ($path === '') {
+        return '';
+    }
+
+    if (str_starts_with($path, '/logos/')) {
+        return '/assets-equipos/logos/' . basename($path);
+    }
+
+    return $path;
+}
+
+function normalizePartidoRecord(array $row): array {
+    if (array_key_exists('localEscudo', $row)) {
+        $row['localEscudo'] = normalizePartidoEscudo($row['localEscudo']);
+    }
+    if (array_key_exists('visitanteEscudo', $row)) {
+        $row['visitanteEscudo'] = normalizePartidoEscudo($row['visitanteEscudo']);
+    }
+    return $row;
+}
+
+function fetchEquiposPartidoMeta(array $ids): array {
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn(int $id) => $id > 0)));
+    if (!$ids) {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $rows = Database::fetchAll("SELECT id, estadio FROM equipos WHERE id IN ($placeholders)", $ids);
+    $byId = [];
+    foreach ($rows as $row) {
+        $byId[(int) $row['id']] = $row;
+    }
+
+    return $byId;
+}
+
+function resolvePartidoEstadio(?string $estadio, int $localId, array $equiposById = []): string {
+    $normalized = trim((string) $estadio);
+    if ($normalized !== '') {
+        return $normalized;
+    }
+
+    $equipo = $equiposById[$localId] ?? null;
+    if (!$equipo && $localId > 0) {
+        $equipo = Database::fetchOne('SELECT id, estadio FROM equipos WHERE id = ?', [$localId]);
+    }
+
+    return trim((string) ($equipo['estadio'] ?? ''));
+}
+
+function ensureHomeConfigTable(): void {
+    Database::execute(
+        "CREATE TABLE IF NOT EXISTS home_config (
+            clave VARCHAR(120) NOT NULL PRIMARY KEY,
+            valor_string VARCHAR(512) NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+}
+
+function buildNextPartidoConfigKey(?string $categoria, ?string $torneo): string {
+    $categoriaKey = strtolower(trim((string) ($categoria ?: 'all')));
+    $torneoKey = strtolower(trim((string) ($torneo ?: 'all')));
+    return "partido_proximo_override:{$categoriaKey}:{$torneoKey}";
+}
+
+function getHomeConfigValue(string $key): ?string {
+    ensureHomeConfigTable();
+    $row = Database::fetchOne('SELECT valor_string FROM home_config WHERE clave = ?', [$key]);
+    return $row ? (string) ($row['valor_string'] ?? '') : null;
+}
+
+function setHomeConfigValue(string $key, ?string $value): void {
+    ensureHomeConfigTable();
+    $normalized = trim((string) $value);
+    if ($normalized === '') {
+        Database::execute('DELETE FROM home_config WHERE clave = ?', [$key]);
+        return;
+    }
+
+    Database::execute(
+        'INSERT INTO home_config (clave, valor_string) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE valor_string = VALUES(valor_string)',
+        [$key, $normalized]
+    );
+}
+
+function matchesPartidoFilters(array $partido, ?string $categoria, ?string $torneo): bool {
+    if ($categoria && strcasecmp((string) ($partido['categoria'] ?? ''), $categoria) !== 0) {
+        return false;
+    }
+    if ($torneo && strcasecmp((string) ($partido['torneo'] ?? ''), $torneo) !== 0) {
+        return false;
+    }
+    return true;
+}
+
+function fetchNextPartido(?string $categoria, ?string $torneo, bool $includePostergados = false): array|false {
+    $params = [];
+    $where = [];
+
+    if ($includePostergados) {
+        $where[] = "LOWER(p.estado) <> 'jugado'";
+    } else {
+        $params[] = 'pendiente';
+        $where[] = 'LOWER(p.estado) = LOWER(?)';
+    }
+
+    if ($categoria) {
+        $params[] = $categoria;
+        $where[] = 'LOWER(p.categoria) = LOWER(?)';
+    }
+    if ($torneo) {
+        $params[] = $torneo;
+        $where[] = 'LOWER(p.torneo) = LOWER(?)';
+    }
+
+    $query = buildPartidosSelect() . ' WHERE ' . implode(' AND ', $where) . ' ORDER BY p.fecha, p.hora, p.id LIMIT 1';
+    $row = Database::fetchOne($query, $params);
+    return $row ? normalizePartidoRecord($row) : false;
+}
+
+function validatePartidoEventos(int $partidoId, array $eventos): array {
+    $partido = fetchPartidoById($partidoId);
+    if (!$partido) {
+        return ['error' => 'Partido no encontrado'];
+    }
+
+    $allowedTeams = [(int) $partido['localId'], (int) $partido['visitanteId']];
+    $playerIds = [];
+    $normalizedEventos = [];
+
+    foreach ($eventos as $index => $evento) {
+        $tipo = $evento['tipo'] ?? '';
+        $jugadorId = (int) ($evento['jugador_id'] ?? 0);
+        $equipoId = (int) ($evento['equipo_id'] ?? 0);
+        $minutoRaw = $evento['minuto'] ?? null;
+        $minuto = ($minutoRaw === null || $minutoRaw === '') ? null : (int) $minutoRaw;
+
+        if (!in_array($tipo, EVENT_TYPES, true)) {
+            return ['error' => 'Hay eventos con tipo inválido'];
+        }
+        if ($jugadorId <= 0 || $equipoId <= 0) {
+            return ['error' => 'Cada evento debe indicar jugador y equipo'];
+        }
+        if (!in_array($equipoId, $allowedTeams, true)) {
+            return ['error' => 'Hay eventos asignados a un equipo que no participa del partido'];
+        }
+        if ($minuto !== null && ($minuto < 0 || $minuto > 130)) {
+            return ['error' => 'El minuto de la incidencia es inválido'];
+        }
+
+        $playerIds[] = $jugadorId;
+        $normalizedEventos[$index] = [
+            'tipo' => $tipo,
+            'jugador_id' => $jugadorId,
+            'equipo_id' => $equipoId,
+            'minuto' => $minuto,
+        ];
+    }
+
+    if (!$playerIds) {
+        return ['partido' => $partido, 'eventos' => []];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
+    $players = Database::fetchAll(
+        "SELECT id, equipo, nombre FROM jugadores WHERE id IN ($placeholders)",
+        $playerIds
+    );
+    $playersById = [];
+    foreach ($players as $player) {
+        $playersById[(int) $player['id']] = $player;
+    }
+
+    foreach ($normalizedEventos as $evento) {
+        $player = $playersById[$evento['jugador_id']] ?? null;
+        if (!$player) {
+            return ['error' => 'Hay eventos con jugadores inexistentes'];
+        }
+        if ((int) $player['equipo'] !== (int) $evento['equipo_id']) {
+            return ['error' => 'El jugador seleccionado no pertenece al equipo de la incidencia'];
+        }
+        if (!in_array((int) $player['equipo'], $allowedTeams, true)) {
+            return ['error' => 'El jugador seleccionado no pertenece a este partido'];
+        }
+    }
+
+    return ['partido' => $partido, 'eventos' => array_values($normalizedEventos)];
+}
 
 function registerPartidosRoutes(Router $router): void {
     $router->group('/partidos', function (Router $r) {
 
         $r->get('/live', function (Request $req, Response $res) {
             try {
-                $seasonId = resolveSeasonId($req->query['temporada'] ?? null);
                 $rows = Database::fetchAll(
                     "SELECT p.id, p.fecha, p.hora, p.estadio, p.estado, p.broadcast,
                         p.goleslocal AS golesLocal, p.golesvisitante AS golesVisitante,
-                        p.temporada_id AS temporadaId,
                         el.nombre AS local, ev.nombre AS visitante,
                         el.escudo AS localEscudo, ev.escudo AS visitanteEscudo
                     FROM partidos p
                     LEFT JOIN equipos el ON p.local = el.id
                     LEFT JOIN equipos ev ON p.visitante = ev.id
-                    WHERE p.temporada_id = ? AND p.fecha = CURRENT_DATE AND p.broadcast IS NOT NULL AND p.broadcast != ''
-                    ORDER BY p.hora",
-                    [$seasonId]
+                    WHERE p.fecha = CURDATE()
+                      AND LOWER(p.estado) <> 'jugado'
+                      AND p.broadcast IS NOT NULL
+                      AND p.broadcast != ''
+                      AND p.hora != '00:00:00'
+                      AND NOW() >= DATE_SUB(CAST(CONCAT(p.fecha, ' ', p.hora) AS DATETIME), INTERVAL 15 MINUTE)
+                      AND NOW() <= DATE_ADD(CAST(CONCAT(p.fecha, ' ', p.hora) AS DATETIME), INTERVAL 3 HOUR)
+                    ORDER BY p.hora"
                 );
-                $res->json($rows);
+                $res->json(array_map('App\\Routes\\normalizePartidoRecord', $rows));
             } catch (\Exception $e) {
                 error_log('Error GET /partidos/live: ' . $e->getMessage());
                 $res->status(500)->json(['error' => 'Error al obtener partidos en vivo']);
             }
         });
 
+        $r->get('/proximo', function (Request $req, Response $res) {
+            try {
+                $categoria = trim((string) ($req->query['categoria'] ?? ''));
+                $torneo = trim((string) ($req->query['torneo'] ?? ''));
+                $configKey = buildNextPartidoConfigKey($categoria, $torneo);
+                $overrideId = (int) (getHomeConfigValue($configKey) ?? 0);
+
+                if ($overrideId <= 0 && $categoria !== '') {
+                    $fallbackKey = buildNextPartidoConfigKey(null, $torneo);
+                    $overrideId = (int) (getHomeConfigValue($fallbackKey) ?? 0);
+                }
+
+                if ($overrideId > 0) {
+                    $override = fetchPartidoById($overrideId);
+                    if ($override && strcasecmp((string) ($override['estado'] ?? ''), 'jugado') !== 0 && matchesPartidoFilters($override, $categoria, $torneo)) {
+                        return $res->json(['partido' => $override, 'modo' => 'manual']);
+                    }
+
+                    setHomeConfigValue($configKey, null);
+                }
+
+                $partido = fetchNextPartido($categoria, $torneo, false);
+                if (!$partido) {
+                    $partido = fetchNextPartido($categoria, $torneo, true);
+                }
+
+                $res->json(['partido' => $partido ?: null, 'modo' => $partido ? 'automatico' : null]);
+            } catch (\Exception $e) {
+                error_log('Error GET /partidos/proximo: ' . $e->getMessage());
+                $res->status(500)->json(['error' => 'Error al obtener el próximo partido']);
+            }
+        });
+
         $r->get('/jornadas', function (Request $req, Response $res) {
             try {
-                $seasonId = resolveSeasonId($req->query['temporada'] ?? null);
-                $params = [$seasonId];
-                $where = ['temporada_id = ?'];
+                $params = [];
+                $where = [];
                 if (!empty($req->query['categoria'])) {
                     $params[] = $req->query['categoria'];
                     $where[] = 'LOWER(categoria) = LOWER(?)';
@@ -76,9 +303,8 @@ function registerPartidosRoutes(Router $router): void {
                     return $res->status(400)->json(['error' => 'Se requieren dos equipos distintos (team1, team2)']);
                 }
 
-                $seasonId = resolveSeasonId($req->query['temporada'] ?? null);
-                $params = [$seasonId, $team1, $team2, $team2, $team1];
-                $where = ['p.temporada_id = ?', '((p.local = ? AND p.visitante = ?) OR (p.local = ? AND p.visitante = ?))', "p.estado = 'jugado'"];
+                $params = [$team1, $team2, $team2, $team1];
+                $where = ['((p.local = ? AND p.visitante = ?) OR (p.local = ? AND p.visitante = ?))', "p.estado = 'jugado'"];
                 if (!empty($req->query['categoria'])) {
                     $params[] = $req->query['categoria'];
                     $where[] = 'LOWER(p.categoria) = LOWER(?)';
@@ -136,7 +362,7 @@ function registerPartidosRoutes(Router $router): void {
                         $draws++;
                     }
                     $partido['goleadores'] = $goleadoresByPartido[$partido['id']] ?? [];
-                    $enriched[] = $partido;
+                    $enriched[] = normalizePartidoRecord($partido);
                 }
 
                 $res->json([
@@ -158,9 +384,8 @@ function registerPartidosRoutes(Router $router): void {
 
         $r->get('', function (Request $req, Response $res) {
             try {
-                $seasonId = resolveSeasonId($req->query['temporada'] ?? null);
-                $params = [$seasonId];
-                $where = ['p.temporada_id = ?'];
+                $params = [];
+                $where = [];
                 $query = buildPartidosSelect();
 
                 if (!empty($req->query['estado'])) {
@@ -185,7 +410,8 @@ function registerPartidosRoutes(Router $router): void {
                 }
                 $query .= ' ORDER BY p.jornada, p.fecha, p.hora';
 
-                $res->json(Database::fetchAll($query, $params));
+                $rows = Database::fetchAll($query, $params);
+                $res->json(array_map('App\\Routes\\normalizePartidoRecord', $rows));
             } catch (\Exception $e) {
                 error_log('Error GET /partidos: ' . $e->getMessage());
                 $res->status(500)->json(['error' => 'Error al listar partidos']);
@@ -198,17 +424,16 @@ function registerPartidosRoutes(Router $router): void {
             $body = $req->body;
             $fecha = $body['fecha'] ?? '';
             $hora = $body['hora'] ?? '';
-            $estadio = $body['estadio'] ?? '';
+            $estadio = trim((string) ($body['estadio'] ?? ''));
             $local = (int) ($body['local'] ?? 0);
             $visitante = (int) ($body['visitante'] ?? 0);
             $estado = $body['estado'] ?? 'pendiente';
             $torneo = $body['torneo'] ?? '';
             $categoria = $body['categoria'] ?? '';
-            $temporadaId = resolveSeasonId($body['temporadaId'] ?? null);
             $jornada = $body['jornada'] ?? null;
             $broadcast = $body['broadcast'] ?? null;
 
-            if (!$fecha || !$hora || !$estadio || !$local || !$visitante || !$torneo || !$categoria) {
+            if (!$fecha || !$hora || !$local || !$visitante || !$torneo || !$categoria) {
                 return $res->status(400)->json(['error' => 'Faltan campos requeridos']);
             }
             if ($local === $visitante) {
@@ -216,14 +441,20 @@ function registerPartidosRoutes(Router $router): void {
             }
 
             try {
-                if (!Database::fetchOne('SELECT 1 FROM equipos WHERE id = ?', [$local]) || !Database::fetchOne('SELECT 1 FROM equipos WHERE id = ?', [$visitante])) {
+                $equiposById = fetchEquiposPartidoMeta([$local, $visitante]);
+                if (!isset($equiposById[$local]) || !isset($equiposById[$visitante])) {
                     return $res->status(400)->json(['error' => 'Equipo local o visitante inválido']);
                 }
 
+                $estadio = resolvePartidoEstadio($estadio, $local, $equiposById);
+                if ($estadio === '') {
+                    return $res->status(400)->json(['error' => 'Completá el estadio del equipo local o cargá uno manualmente']);
+                }
+
                 Database::execute(
-                    'INSERT INTO partidos (fecha, hora, estadio, local, visitante, estado, goleslocal, golesvisitante, amarillas, rojas, torneo, categoria, temporada_id, jornada, broadcast)
-                    VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, ?, ?, ?, ?)',
-                    [$fecha, $hora, $estadio, $local, $visitante, $estado, $torneo, $categoria, $temporadaId, $jornada, $broadcast]
+                    'INSERT INTO partidos (fecha, hora, estadio, local, visitante, estado, goleslocal, golesvisitante, amarillas, rojas, torneo, categoria, jornada, broadcast)
+                    VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, ?, ?, ?)',
+                    [$fecha, $hora, $estadio, $local, $visitante, $estado, $torneo, $categoria, $jornada, $broadcast]
                 );
 
                 $res->status(201)->json(fetchPartidoById(Database::lastInsertId()));
@@ -250,14 +481,13 @@ function registerPartidosRoutes(Router $router): void {
                 'estado' => $partido['estado'] ?? 'pendiente',
                 'torneo' => $partido['torneo'] ?? '',
                 'categoria' => $partido['categoria'] ?? '',
-                'temporadaId' => resolveSeasonId($partido['temporadaId'] ?? null),
                 'jornada' => $partido['jornada'] ?? null,
                 'broadcast' => $partido['broadcast'] ?? null,
             ], $input);
 
             foreach ($partidos as $partido) {
-                if (!$partido['fecha'] || !$partido['hora'] || !$partido['estadio'] || !$partido['torneo'] || !$partido['categoria']) {
-                    return $res->status(400)->json(['error' => 'Todos los partidos requieren fecha, hora, estadio, torneo y categoría']);
+                if (!$partido['fecha'] || !$partido['hora'] || !$partido['torneo'] || !$partido['categoria']) {
+                    return $res->status(400)->json(['error' => 'Todos los partidos requieren fecha, hora, torneo y categoría']);
                 }
                 if (!$partido['local'] || !$partido['visitante'] || $partido['local'] === $partido['visitante']) {
                     return $res->status(400)->json(['error' => 'Cada partido debe tener equipos válidos y distintos']);
@@ -278,28 +508,32 @@ function registerPartidosRoutes(Router $router): void {
             try {
                 $db->beginTransaction();
 
-                $placeholders = implode(',', array_fill(0, count($allTeams), '?'));
-                $equipos = Database::fetchAll("SELECT id FROM equipos WHERE id IN ($placeholders)", $allTeams);
-                if (count($equipos) !== count(array_unique($allTeams))) {
+                $equiposById = fetchEquiposPartidoMeta($allTeams);
+                if (count($equiposById) !== count(array_unique($allTeams))) {
                     $db->rollBack();
                     return $res->status(400)->json(['error' => 'Uno o más equipos no existen']);
                 }
 
                 $created = [];
                 foreach ($partidos as $partido) {
+                    $estadio = resolvePartidoEstadio($partido['estadio'], $partido['local'], $equiposById);
+                    if ($estadio === '') {
+                        $db->rollBack();
+                        return $res->status(400)->json(['error' => 'Cada equipo local debe tener estadio o el partido debe informarlo manualmente']);
+                    }
+
                     Database::execute(
-                        'INSERT INTO partidos (fecha, hora, estadio, local, visitante, estado, goleslocal, golesvisitante, amarillas, rojas, torneo, categoria, temporada_id, jornada, broadcast)
-                        VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, ?, ?, ?, ?)',
+                        'INSERT INTO partidos (fecha, hora, estadio, local, visitante, estado, goleslocal, golesvisitante, amarillas, rojas, torneo, categoria, jornada, broadcast)
+                        VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, ?, ?, ?)',
                         [
                             $partido['fecha'],
                             $partido['hora'],
-                            $partido['estadio'],
+                            $estadio,
                             $partido['local'],
                             $partido['visitante'],
                             $partido['estado'],
                             $partido['torneo'],
                             $partido['categoria'],
-                            $partido['temporadaId'],
                             $partido['jornada'],
                             $partido['broadcast'],
                         ]
@@ -315,6 +549,58 @@ function registerPartidosRoutes(Router $router): void {
                 }
                 error_log('Error POST /partidos/bulk: ' . $e->getMessage());
                 $res->status(500)->json(['error' => 'Error al crear fixture']);
+            }
+        });
+
+        $r->put('/proximo', function (Request $req, Response $res) {
+            return authMiddleware($req, $res);
+        }, function (Request $req, Response $res) {
+            $partidoId = (int) ($req->body['partidoId'] ?? 0);
+            if ($partidoId <= 0) {
+                return $res->status(400)->json(['error' => 'Seleccioná un partido válido']);
+            }
+
+            try {
+                $partido = fetchPartidoById($partidoId);
+                if (!$partido) {
+                    return $res->status(404)->json(['error' => 'Partido no encontrado']);
+                }
+                if (strcasecmp((string) ($partido['estado'] ?? ''), 'jugado') === 0) {
+                    return $res->status(400)->json(['error' => 'No se puede destacar un partido ya jugado']);
+                }
+
+                $categoria = trim((string) ($req->body['categoria'] ?? ''));
+                if ($categoria === '') {
+                    $categoria = trim((string) ($partido['categoria'] ?? ''));
+                }
+
+                $torneo = trim((string) ($req->body['torneo'] ?? ''));
+                if ($torneo === '') {
+                    $torneo = trim((string) ($partido['torneo'] ?? ''));
+                }
+
+                $configKey = buildNextPartidoConfigKey($categoria, $torneo);
+                setHomeConfigValue($configKey, (string) $partidoId);
+
+                $res->json(['ok' => true, 'partido' => $partido, 'modo' => 'manual']);
+            } catch (\Exception $e) {
+                error_log('Error PUT /partidos/proximo: ' . $e->getMessage());
+                $res->status(500)->json(['error' => 'Error al guardar el próximo partido']);
+            }
+        });
+
+        $r->delete('/proximo', function (Request $req, Response $res) {
+            return authMiddleware($req, $res);
+        }, function (Request $req, Response $res) {
+            try {
+                $categoria = trim((string) ($req->query['categoria'] ?? ''));
+                $torneo = trim((string) ($req->query['torneo'] ?? ''));
+                $configKey = buildNextPartidoConfigKey($categoria, $torneo);
+                setHomeConfigValue($configKey, null);
+                $res->json(['ok' => true]);
+            } catch (\Exception $e) {
+                error_log('Error DELETE /partidos/proximo: ' . $e->getMessage());
+                $res->status(500)->json(['error' => 'Error al limpiar el próximo partido manual']);
             }
         });
 
@@ -356,7 +642,6 @@ function registerPartidosRoutes(Router $router): void {
                         rojas = COALESCE(?, rojas),
                         torneo = COALESCE(?, torneo),
                         categoria = COALESCE(?, categoria),
-                        temporada_id = COALESCE(?, temporada_id),
                         jornada = COALESCE(?, jornada),
                         broadcast = COALESCE(?, broadcast)
                     WHERE id = ?',
@@ -373,7 +658,6 @@ function registerPartidosRoutes(Router $router): void {
                         $body['rojas'] ?? null,
                         $body['torneo'] ?? null,
                         $body['categoria'] ?? null,
-                        isset($body['temporadaId']) ? resolveSeasonId($body['temporadaId']) : null,
                         $body['jornada'] ?? null,
                         $body['broadcast'] ?? null,
                         $id,
@@ -398,35 +682,39 @@ function registerPartidosRoutes(Router $router): void {
             if ($golesLocal < 0 || $golesVisitante < 0) {
                 return $res->status(400)->json(['error' => 'El resultado del partido es inválido']);
             }
-            foreach ($eventos as $evento) {
-                if (!in_array($evento['tipo'] ?? '', EVENT_TYPES, true)) {
-                    return $res->status(400)->json(['error' => 'Hay eventos con tipo inválido']);
-                }
+            if (!is_array($eventos)) {
+                return $res->status(400)->json(['error' => 'Los eventos del partido son inválidos']);
             }
+
+            $validation = validatePartidoEventos($id, $eventos);
+            if (!empty($validation['error'])) {
+                return $res->status(400)->json(['error' => $validation['error']]);
+            }
+
+            $eventos = $validation['eventos'];
 
             $amarillas = count(array_filter($eventos, static fn(array $evento) => ($evento['tipo'] ?? null) === 'amarilla'));
             $rojas = count(array_filter($eventos, static fn(array $evento) => ($evento['tipo'] ?? null) === 'roja'));
+
+            // Determinar estado según parámetro 'finalizar'
+            $finalizar = $req->body['finalizar'] ?? true; // default true para compatibilidad
+            $nuevoEstado = $finalizar ? 'jugado' : 'en_curso';
 
             $db = Database::getConnection();
             try {
                 $db->beginTransaction();
 
-                if (!Database::fetchOne('SELECT 1 FROM partidos WHERE id = ?', [$id])) {
-                    $db->rollBack();
-                    return $res->status(404)->json(['error' => 'Partido no encontrado']);
-                }
-
                 Database::execute(
-                    "UPDATE partidos SET goleslocal = ?, golesvisitante = ?, amarillas = ?, rojas = ?, estado = 'jugado' WHERE id = ?",
-                    [$golesLocal, $golesVisitante, $amarillas, $rojas, $id]
+                    "UPDATE partidos SET goleslocal = ?, golesvisitante = ?, amarillas = ?, rojas = ?, estado = ? WHERE id = ?",
+                    [$golesLocal, $golesVisitante, $amarillas, $rojas, $nuevoEstado, $id]
                 );
                 Database::execute('DELETE FROM eventos WHERE partido_id = ?', [$id]);
 
                 $createdEventos = [];
                 foreach ($eventos as $evento) {
                     Database::execute(
-                        'INSERT INTO eventos (partido_id, jugador_id, equipo_id, temporada_id, tipo, minuto) VALUES (?, ?, ?, ?, ?, ?)',
-                        [$id, $evento['jugador_id'] ?? null, $evento['equipo_id'] ?? null, (int) (fetchPartidoById($id)['temporadaId'] ?? resolveSeasonId(null)), $evento['tipo'], $evento['minuto'] ?? null]
+                        'INSERT INTO eventos (partido_id, jugador_id, equipo_id, tipo, minuto) VALUES (?, ?, ?, ?, ?)',
+                        [$id, $evento['jugador_id'] ?? null, $evento['equipo_id'] ?? null, $evento['tipo'], $evento['minuto'] ?? null]
                     );
                     $createdEventos[] = fetchPartidoEventoById(Database::lastInsertId());
                 }
@@ -466,7 +754,7 @@ function registerPartidosRoutes(Router $router): void {
 function buildPartidosSelect(): string {
     return "SELECT p.id, p.fecha, p.hora, p.estadio, p.local AS localId, p.visitante AS visitanteId, p.estado,
         p.goleslocal AS golesLocal, p.golesvisitante AS golesVisitante, p.amarillas, p.rojas,
-        p.torneo, p.categoria, p.temporada_id AS temporadaId, p.jornada, p.broadcast,
+        p.torneo, p.categoria, p.jornada, p.broadcast,
         el.nombre AS local, ev.nombre AS visitante,
         el.escudo AS localEscudo, ev.escudo AS visitanteEscudo
     FROM partidos p
@@ -475,7 +763,8 @@ function buildPartidosSelect(): string {
 }
 
 function fetchPartidoById(int $id): array|false {
-    return Database::fetchOne(buildPartidosSelect() . ' WHERE p.id = ?', [$id]);
+    $row = Database::fetchOne(buildPartidosSelect() . ' WHERE p.id = ?', [$id]);
+    return $row ? normalizePartidoRecord($row) : false;
 }
 
 function fetchPartidoEventoById(int $id): array|false {

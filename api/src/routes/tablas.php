@@ -6,21 +6,16 @@ use App\Database;
 use App\Request;
 use App\Response;
 
-use function App\resolveSeasonId;
-
-require_once __DIR__ . '/../Season.php';
-
 function registerTablasRoutes(Router $router): void {
     $router->group('/tabla', function (Router $r) {
 
         // GET /tabla
         $r->get('', function (Request $req, Response $res) {
             try {
-                $seasonId = resolveSeasonId($req->query['temporada'] ?? null);
-                $params = [$seasonId];
-                $query = "SELECT id, nombre, categoria FROM equipos WHERE temporada_id = ?";
+                $params = [];
+                $query = "SELECT id, nombre, categoria FROM equipos";
                 if (!empty($req->query['categoria'])) {
-                    $query .= " AND LOWER(categoria) = LOWER(?)";
+                    $query .= " WHERE LOWER(categoria) = LOWER(?)";
                     $params[] = $req->query['categoria'];
                 }
                 $equipos = Database::fetchAll($query, $params);
@@ -38,8 +33,8 @@ function registerTablasRoutes(Router $router): void {
                     unset($entry);
                 }
 
-                $pParams = [$seasonId];
-                $pWhere = ['temporada_id = ?', "estado = 'jugado'"];
+                $pParams = [];
+                $pWhere = ["estado = 'jugado'"];
                 if (!empty($req->query['categoria'])) {
                     $pParams[] = $req->query['categoria'];
                     $pWhere[] = "LOWER(categoria) = LOWER(?)";
@@ -100,26 +95,27 @@ function registerTablasRoutes(Router $router): void {
         // GET /tabla/goleadores
         $r->get('/goleadores', function (Request $req, Response $res) {
             try {
-                $seasonId = resolveSeasonId($req->query['temporada'] ?? null);
-                $params = [$seasonId];
-                $where = ['p.temporada_id = ?', "ev.tipo = 'gol'"];
+                $params = ['gol'];
+                $where = ["ev.jugador_id IS NOT NULL", "p.estado = 'jugado'"];
                 if (!empty($req->query['categoria'])) {
                     $params[] = $req->query['categoria'];
-                    $where[] = "LOWER(p.categoria) = LOWER(?)";
+                    $where[] = "LOWER(eq.categoria) = LOWER(?)";
                 }
                 if (!empty($req->query['torneo'])) {
                     $params[] = $req->query['torneo'];
                     $where[] = "LOWER(p.torneo) = LOWER(?)";
                 }
+
                 $rows = Database::fetchAll(
-                    "SELECT j.nombre, COALESCE(e.nombre, '-') AS equipo, COUNT(*) AS goles
+                    "SELECT j.nombre, COALESCE(eq.nombre, '-') AS equipo, COUNT(*) AS goles
                      FROM eventos ev
-                     JOIN partidos p ON ev.partido_id = p.id
-                     JOIN jugadores j ON ev.jugador_id = j.id
-                     LEFT JOIN equipos e ON ev.equipo_id = e.id
-                     WHERE " . implode(' AND ', $where) . "
-                     GROUP BY j.id, j.nombre, e.nombre
-                     ORDER BY goles DESC",
+                     INNER JOIN jugadores j ON ev.jugador_id = j.id
+                     INNER JOIN equipos eq ON ev.equipo_id = eq.id
+                     INNER JOIN partidos p ON ev.partido_id = p.id
+                     WHERE ev.tipo = ? AND " . implode(' AND ', $where) . "
+                     GROUP BY ev.jugador_id, j.nombre, eq.nombre
+                     HAVING COUNT(*) > 0
+                     ORDER BY goles DESC, j.nombre ASC",
                     $params
                 );
                 $res->json($rows);
@@ -132,45 +128,44 @@ function registerTablasRoutes(Router $router): void {
         // GET /tabla/tarjetas
         $r->get('/tarjetas', function (Request $req, Response $res) {
             try {
-                $buildWhere = function (string $tipo) use ($req) {
-                    $params = [resolveSeasonId($req->query['temporada'] ?? null)];
-                    $where = ['p.temporada_id = ?', "ev.tipo = '$tipo'"];
-                    if (!empty($req->query['categoria'])) {
-                        $params[] = $req->query['categoria'];
-                        $where[] = "LOWER(p.categoria) = LOWER(?)";
-                    }
-                    if (!empty($req->query['torneo'])) {
-                        $params[] = $req->query['torneo'];
-                        $where[] = "LOWER(p.torneo) = LOWER(?)";
-                    }
-                    return ['params' => $params, 'where' => implode(' AND ', $where)];
-                };
-
-                $aq = $buildWhere('amarilla');
-                $rq = $buildWhere('roja');
+                $params_a = ['amarilla'];
+                $params_r = ['roja'];
+                $where = ["ev.jugador_id IS NOT NULL", "p.estado = 'jugado'"];
+                if (!empty($req->query['categoria'])) {
+                    $params_a[] = $req->query['categoria'];
+                    $params_r[] = $req->query['categoria'];
+                    $where[] = "LOWER(eq.categoria) = LOWER(?)";
+                }
+                if (!empty($req->query['torneo'])) {
+                    $params_a[] = $req->query['torneo'];
+                    $params_r[] = $req->query['torneo'];
+                    $where[] = "LOWER(p.torneo) = LOWER(?)";
+                }
 
                 $amarillas = Database::fetchAll(
-                    "SELECT j.nombre, COALESCE(e.nombre, '-') AS equipo, COUNT(*) AS amarillas
+                    "SELECT j.nombre, COALESCE(eq.nombre, '-') AS equipo, COUNT(*) AS amarillas
                      FROM eventos ev
-                     JOIN partidos p ON ev.partido_id = p.id
-                     JOIN jugadores j ON ev.jugador_id = j.id
-                     LEFT JOIN equipos e ON ev.equipo_id = e.id
-                     WHERE {$aq['where']}
-                     GROUP BY j.id, j.nombre, e.nombre
-                     ORDER BY amarillas DESC",
-                    $aq['params']
+                     INNER JOIN jugadores j ON ev.jugador_id = j.id
+                     INNER JOIN equipos eq ON ev.equipo_id = eq.id
+                     INNER JOIN partidos p ON ev.partido_id = p.id
+                     WHERE ev.tipo = ? AND " . implode(' AND ', $where) . "
+                     GROUP BY ev.jugador_id, j.nombre, eq.nombre
+                     HAVING COUNT(*) > 0
+                     ORDER BY amarillas DESC, j.nombre ASC",
+                    $params_a
                 );
 
                 $rojas = Database::fetchAll(
-                    "SELECT j.nombre, COALESCE(e.nombre, '-') AS equipo, COUNT(*) AS rojas
+                    "SELECT j.nombre, COALESCE(eq.nombre, '-') AS equipo, COUNT(*) AS rojas
                      FROM eventos ev
-                     JOIN partidos p ON ev.partido_id = p.id
-                     JOIN jugadores j ON ev.jugador_id = j.id
-                     LEFT JOIN equipos e ON ev.equipo_id = e.id
-                     WHERE {$rq['where']}
-                     GROUP BY j.id, j.nombre, e.nombre
-                     ORDER BY rojas DESC",
-                    $rq['params']
+                     INNER JOIN jugadores j ON ev.jugador_id = j.id
+                     INNER JOIN equipos eq ON ev.equipo_id = eq.id
+                     INNER JOIN partidos p ON ev.partido_id = p.id
+                     WHERE ev.tipo = ? AND " . implode(' AND ', $where) . "
+                     GROUP BY ev.jugador_id, j.nombre, eq.nombre
+                     HAVING COUNT(*) > 0
+                     ORDER BY rojas DESC, j.nombre ASC",
+                    $params_r
                 );
 
                 $res->json(['amarillas' => $amarillas, 'rojas' => $rojas]);

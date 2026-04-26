@@ -39,16 +39,19 @@ function registerNoticiasRoutes(Router $router): void {
                     $where[] = !empty($req->query['featured']) ? 'n.destacada = 1' : 'n.destacada = 0';
                 }
 
-                if ($isAdmin && !empty($req->query['estado'])) {
-                    $params[] = $req->query['estado'];
-                    $where[] = 'LOWER(n.estado) = LOWER(?)';
+                if ($isAdmin) {
+                    if (!empty($req->query['estado'])) {
+                        $params[] = $req->query['estado'];
+                        $where[] = 'LOWER(n.estado) = LOWER(?)';
+                    }
                 } else {
                     $where[] = "n.estado = 'publicada'";
                 }
 
                 $rows = Database::fetchAll(
-                    "SELECT n.id, n.slug, n.titulo, n.copete, n.contenido, n.imagen_url AS imagenUrl, n.imagen_alt AS imagenAlt,
+                    "SELECT n.id, n.slug, n.titulo, n.volanta, n.copete, n.contenido, n.imagen_url AS imagenUrl, n.imagen_alt AS imagenAlt,
                         n.tag, n.categoria, n.autor_nombre AS autorNombre, n.estado, n.destacada AS destacada,
+                        n.tipo_contenido AS tipoContenido, n.boletin_pdf_url AS boletinPdfUrl,
                         n.orden_home AS ordenHome, n.published_at AS publishedAt, n.created_at AS createdAt,
                         n.temporada_id AS temporadaId, t.nombre AS temporadaNombre
                     FROM noticias n
@@ -72,8 +75,9 @@ function registerNoticiasRoutes(Router $router): void {
                 $idOrSlug = trim((string) $req->params['id']);
                 $field = ctype_digit($idOrSlug) ? 'n.id' : 'n.slug';
                 $row = Database::fetchOne(
-                    "SELECT n.id, n.slug, n.titulo, n.copete, n.contenido, n.imagen_url AS imagenUrl, n.imagen_alt AS imagenAlt,
+                    "SELECT n.id, n.slug, n.titulo, n.volanta, n.copete, n.contenido, n.imagen_url AS imagenUrl, n.imagen_alt AS imagenAlt,
                         n.tag, n.categoria, n.autor_nombre AS autorNombre, n.estado, n.destacada AS destacada,
+                        n.tipo_contenido AS tipoContenido, n.boletin_pdf_url AS boletinPdfUrl, n.galeria_json AS galeriaJson,
                         n.orden_home AS ordenHome, n.published_at AS publishedAt, n.created_at AS createdAt,
                         n.temporada_id AS temporadaId, t.nombre AS temporadaNombre
                     FROM noticias n
@@ -96,6 +100,7 @@ function registerNoticiasRoutes(Router $router): void {
                 );
 
                 $row['relacionadas'] = $related;
+                $row['galeria'] = normalizeGaleriaFromStorage($row['galeriaJson'] ?? null);
                 $res->json($row);
             } catch (\Throwable $e) {
                 error_log('Error GET /noticias/:id: ' . $e->getMessage());
@@ -110,11 +115,12 @@ function registerNoticiasRoutes(Router $router): void {
                 ensureNoticiasTables();
                 $payload = normalizeNoticiaPayload($req);
                 Database::execute(
-                    'INSERT INTO noticias (slug, titulo, copete, contenido, imagen_url, imagen_alt, tag, categoria, autor_nombre, estado, destacada, orden_home, temporada_id, published_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO noticias (slug, titulo, volanta, copete, contenido, imagen_url, imagen_alt, tag, categoria, autor_nombre, estado, destacada, tipo_contenido, boletin_pdf_url, galeria_json, orden_home, temporada_id, published_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     [
                         $payload['slug'],
                         $payload['titulo'],
+                        $payload['volanta'],
                         $payload['copete'],
                         $payload['contenido'],
                         $payload['imagenUrl'],
@@ -124,6 +130,9 @@ function registerNoticiasRoutes(Router $router): void {
                         $payload['autorNombre'],
                         $payload['estado'],
                         $payload['destacada'] ? 1 : 0,
+                        $payload['tipoContenido'],
+                        $payload['boletinPdfUrl'],
+                        $payload['galeriaJson'],
                         $payload['ordenHome'],
                         $payload['temporadaId'],
                         $payload['publishedAt'],
@@ -135,7 +144,7 @@ function registerNoticiasRoutes(Router $router): void {
                 $res->status(201)->json(fetchNoticiaById($newsId));
             } catch (\Throwable $e) {
                 error_log('Error POST /noticias: ' . $e->getMessage());
-                $res->status(500)->json(['error' => 'Error al crear la noticia']);
+                $res->status(500)->json(['error' => 'Error al crear la noticia: ' . $e->getMessage()]);
             }
         });
 
@@ -151,10 +160,11 @@ function registerNoticiasRoutes(Router $router): void {
 
                 $payload = normalizeNoticiaPayload($req, true);
                 Database::execute(
-                    'UPDATE noticias SET slug = COALESCE(?, slug), titulo = COALESCE(?, titulo), copete = COALESCE(?, copete), contenido = COALESCE(?, contenido), imagen_url = COALESCE(?, imagen_url), imagen_alt = COALESCE(?, imagen_alt), tag = COALESCE(?, tag), categoria = COALESCE(?, categoria), autor_nombre = COALESCE(?, autor_nombre), estado = COALESCE(?, estado), destacada = COALESCE(?, destacada), orden_home = COALESCE(?, orden_home), temporada_id = COALESCE(?, temporada_id), published_at = COALESCE(?, published_at) WHERE id = ?',
+                    'UPDATE noticias SET slug = COALESCE(?, slug), titulo = COALESCE(?, titulo), volanta = COALESCE(?, volanta), copete = COALESCE(?, copete), contenido = COALESCE(?, contenido), imagen_url = COALESCE(?, imagen_url), imagen_alt = COALESCE(?, imagen_alt), tag = COALESCE(?, tag), categoria = COALESCE(?, categoria), autor_nombre = COALESCE(?, autor_nombre), estado = COALESCE(?, estado), destacada = COALESCE(?, destacada), tipo_contenido = COALESCE(?, tipo_contenido), boletin_pdf_url = CASE WHEN ? IS NULL THEN boletin_pdf_url WHEN ? = \'\' THEN NULL ELSE ? END, galeria_json = COALESCE(?, galeria_json), orden_home = COALESCE(?, orden_home), temporada_id = COALESCE(?, temporada_id), published_at = COALESCE(?, published_at) WHERE id = ?',
                     [
                         $payload['slug'],
                         $payload['titulo'],
+                        $payload['volanta'],
                         $payload['copete'],
                         $payload['contenido'],
                         $payload['imagenUrl'],
@@ -164,6 +174,11 @@ function registerNoticiasRoutes(Router $router): void {
                         $payload['autorNombre'],
                         $payload['estado'],
                         $payload['destacada'] === null ? null : ($payload['destacada'] ? 1 : 0),
+                        $payload['tipoContenido'],
+                        $payload['boletinPdfUrl'],
+                        $payload['boletinPdfUrl'],
+                        $payload['boletinPdfUrl'],
+                        $payload['galeriaJson'],
                         $payload['ordenHome'],
                         $payload['temporadaId'],
                         $payload['publishedAt'],
@@ -214,6 +229,9 @@ function ensureNoticiasTables(): void {
             autor_nombre VARCHAR(120) NOT NULL DEFAULT 'Redacción Juego de Equipo',
             estado VARCHAR(20) NOT NULL DEFAULT 'borrador',
             destacada TINYINT(1) NOT NULL DEFAULT 0,
+            tipo_contenido VARCHAR(20) NOT NULL DEFAULT 'comun',
+            boletin_pdf_url VARCHAR(500) NULL,
+            galeria_json MEDIUMTEXT NULL,
             orden_home INT NOT NULL DEFAULT 999,
             temporada_id INT NOT NULL,
             published_at DATETIME NULL,
@@ -236,12 +254,38 @@ function ensureNoticiasTables(): void {
             CONSTRAINT fk_noticias_relacionadas_secundaria FOREIGN KEY (noticia_relacionada_id) REFERENCES noticias(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
+
+    // Migración: agregar volanta si no existe
+    try {
+        Database::execute("ALTER TABLE noticias ADD COLUMN volanta VARCHAR(255) NULL AFTER titulo");
+    } catch (\Throwable $e) {
+        // La columna ya existe; ignorar
+    }
+
+    try {
+        Database::execute("ALTER TABLE noticias ADD COLUMN tipo_contenido VARCHAR(20) NOT NULL DEFAULT 'comun' AFTER destacada");
+    } catch (\Throwable $e) {
+        // La columna ya existe; ignorar
+    }
+
+    try {
+        Database::execute("ALTER TABLE noticias ADD COLUMN boletin_pdf_url VARCHAR(500) NULL AFTER tipo_contenido");
+    } catch (\Throwable $e) {
+        // La columna ya existe; ignorar
+    }
+
+    try {
+        Database::execute("ALTER TABLE noticias ADD COLUMN galeria_json MEDIUMTEXT NULL AFTER boletin_pdf_url");
+    } catch (\Throwable $e) {
+        // La columna ya existe; ignorar
+    }
 }
 
 function fetchNoticiaById(int $id): array|false {
     $row = Database::fetchOne(
-        "SELECT n.id, n.slug, n.titulo, n.copete, n.contenido, n.imagen_url AS imagenUrl, n.imagen_alt AS imagenAlt,
+        "SELECT n.id, n.slug, n.titulo, n.volanta, n.copete, n.contenido, n.imagen_url AS imagenUrl, n.imagen_alt AS imagenAlt,
             n.tag, n.categoria, n.autor_nombre AS autorNombre, n.estado, n.destacada AS destacada,
+            n.tipo_contenido AS tipoContenido, n.boletin_pdf_url AS boletinPdfUrl, n.galeria_json AS galeriaJson,
             n.orden_home AS ordenHome, n.published_at AS publishedAt, n.created_at AS createdAt,
             n.temporada_id AS temporadaId, t.nombre AS temporadaNombre
         FROM noticias n
@@ -258,6 +302,7 @@ function fetchNoticiaById(int $id): array|false {
         'SELECT noticia_relacionada_id AS id FROM noticias_relacionadas WHERE noticia_id = ? ORDER BY noticia_relacionada_id',
         [$id]
     );
+    $row['galeria'] = normalizeGaleriaFromStorage($row['galeriaJson'] ?? null);
 
     return $row;
 }
@@ -266,33 +311,163 @@ function normalizeNoticiaPayload(Request $req, bool $partial = false): array {
     $titulo = array_key_exists('titulo', $req->body) ? trim((string) $req->body['titulo']) : null;
     $copete = array_key_exists('copete', $req->body) ? trim((string) $req->body['copete']) : null;
     $contenido = array_key_exists('contenido', $req->body) ? trim((string) $req->body['contenido']) : null;
+    $estado = array_key_exists('estado', $req->body) ? trim((string) $req->body['estado']) : 'borrador';
+    $tipoContenido = array_key_exists('tipoContenido', $req->body) ? normalizeTipoContenido((string) $req->body['tipoContenido']) : ($partial ? null : 'comun');
+    $boletinPdfUrl = array_key_exists('boletinPdfUrl', $req->body) ? trim((string) $req->body['boletinPdfUrl']) : null;
+    $galeria = array_key_exists('galeria', $req->body) ? normalizeGaleria($req->body['galeria']) : [];
 
-    if (!$partial && (!$titulo || !$copete || !$contenido)) {
-        throw new \InvalidArgumentException('Título, copete y contenido son obligatorios');
+    if (!$partial && $tipoContenido === null) {
+        $tipoContenido = 'comun';
+    }
+
+    if (!$partial && $estado !== 'borrador' && !$titulo) {
+        throw new \InvalidArgumentException('Título es obligatorio para publicar');
+    }
+
+    if (!$partial && $estado !== 'borrador' && !$copete) {
+        throw new \InvalidArgumentException('Copete es obligatorio para publicar');
+    }
+
+    if (!$partial && $estado !== 'borrador') {
+        if ($tipoContenido === 'galeria' && count($galeria) === 0) {
+            throw new \InvalidArgumentException('La nota galería requiere al menos una imagen');
+        }
+        if (($tipoContenido === 'comun' || $tipoContenido === 'boletin') && !$contenido) {
+            throw new \InvalidArgumentException('El contenido es obligatorio para este tipo de nota');
+        }
+        if ($tipoContenido === 'boletin' && $boletinPdfUrl === '') {
+            throw new \InvalidArgumentException('La nota boletín requiere un PDF');
+        }
+    }
+
+    // Para borradores: garantizar valores no-null que cumplan las restricciones de la tabla
+    if (!$partial && $estado === 'borrador') {
+        $titulo    = $titulo ?: '';
+        $copete    = $copete ?: '';
+        if ($tipoContenido === 'galeria') {
+            $contenido = buildGaleriaHtml($galeria);
+        } else {
+            $contenido = $contenido ?: '';
+        }
+    }
+
+    if ($tipoContenido === 'galeria') {
+        $contenido = buildGaleriaHtml($galeria);
+    }
+
+    if ($tipoContenido !== null && $tipoContenido !== 'boletin') {
+        $boletinPdfUrl = $partial ? '' : null;
     }
 
     $temporadaId = array_key_exists('temporadaId', $req->body) ? resolveSeasonId($req->body['temporadaId']) : ($partial ? null : resolveSeasonId(null));
-    $slug = array_key_exists('slug', $req->body)
+    $slug = array_key_exists('slug', $req->body) && trim((string) $req->body['slug']) !== ''
         ? normalizeSlug((string) $req->body['slug'])
-        : ($titulo ? normalizeSlug($titulo) : null);
+        : ($titulo !== '' && $titulo !== null ? normalizeSlug($titulo) : null);
+
+    // Slug único para borradores sin título
+    if (!$partial && !$slug) {
+        $slug = 'borrador-' . uniqid();
+    }
+
+    // Garantizar que categoria no sea vacía
+    $categoria = array_key_exists('categoria', $req->body) ? trim((string) $req->body['categoria']) : ($partial ? null : 'General');
+    if (!$partial && ($categoria === '' || $categoria === null)) {
+        $categoria = 'General';
+    }
 
     return [
         'slug' => $slug,
         'titulo' => $titulo,
+        'volanta' => array_key_exists('volanta', $req->body) ? (trim((string) $req->body['volanta']) ?: null) : null,
         'copete' => $copete,
         'contenido' => $contenido,
         'imagenUrl' => array_key_exists('imagenUrl', $req->body) ? trim((string) $req->body['imagenUrl']) : null,
         'imagenAlt' => array_key_exists('imagenAlt', $req->body) ? trim((string) $req->body['imagenAlt']) : null,
         'tag' => array_key_exists('tag', $req->body) ? trim((string) $req->body['tag']) : null,
-        'categoria' => array_key_exists('categoria', $req->body) ? trim((string) $req->body['categoria']) : ($partial ? null : 'General'),
+        'categoria' => $categoria,
         'autorNombre' => array_key_exists('autorNombre', $req->body) ? trim((string) $req->body['autorNombre']) : ($partial ? null : 'Redacción Juego de Equipo'),
         'estado' => array_key_exists('estado', $req->body) ? trim((string) $req->body['estado']) : ($partial ? null : 'borrador'),
         'destacada' => array_key_exists('destacada', $req->body) ? (bool) $req->body['destacada'] : ($partial ? null : false),
+        'tipoContenido' => $tipoContenido,
+        'boletinPdfUrl' => $boletinPdfUrl !== '' ? $boletinPdfUrl : null,
+        'galeriaJson' => array_key_exists('galeria', $req->body) ? json_encode($galeria, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : ($partial ? null : json_encode([], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
         'ordenHome' => array_key_exists('ordenHome', $req->body) ? (int) $req->body['ordenHome'] : ($partial ? null : 999),
         'temporadaId' => $temporadaId,
         'publishedAt' => array_key_exists('publishedAt', $req->body) ? ($req->body['publishedAt'] ?: null) : ($partial ? null : null),
         'relacionadas' => array_key_exists('relacionadas', $req->body) ? normalizeRelacionadas($req->body['relacionadas']) : null,
     ];
+}
+
+function normalizeTipoContenido(string $value): ?string {
+    $value = strtolower(trim($value));
+    if ($value === '') {
+        return null;
+    }
+
+    if (!in_array($value, ['comun', 'galeria', 'boletin'], true)) {
+        return 'comun';
+    }
+
+    return $value;
+}
+
+function normalizeGaleria(mixed $raw): array {
+    if (!is_array($raw)) {
+        return [];
+    }
+
+    $normalized = [];
+    foreach ($raw as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+
+        $imagenUrl = trim((string) ($item['imagenUrl'] ?? ''));
+        if ($imagenUrl === '') {
+            continue;
+        }
+
+        $epigrafe = trim((string) ($item['epigrafe'] ?? ''));
+        $normalized[] = [
+            'imagenUrl' => $imagenUrl,
+            'epigrafe' => $epigrafe,
+        ];
+    }
+
+    return $normalized;
+}
+
+function normalizeGaleriaFromStorage(?string $galeriaJson): array {
+    if (!$galeriaJson) {
+        return [];
+    }
+
+    $decoded = json_decode($galeriaJson, true);
+    if (!is_array($decoded)) {
+        return [];
+    }
+
+    return normalizeGaleria($decoded);
+}
+
+function buildGaleriaHtml(array $galeria): string {
+    if (count($galeria) === 0) {
+        return '';
+    }
+
+    $chunks = [];
+    foreach ($galeria as $item) {
+        $url = htmlspecialchars((string) ($item['imagenUrl'] ?? ''), ENT_QUOTES, 'UTF-8');
+        if ($url === '') {
+            continue;
+        }
+
+        $epigrafe = trim((string) ($item['epigrafe'] ?? ''));
+        $caption = $epigrafe !== '' ? '<figcaption>' . htmlspecialchars($epigrafe, ENT_QUOTES, 'UTF-8') . '</figcaption>' : '';
+        $chunks[] = '<figure class="gallery-item"><img src="' . $url . '" alt="" loading="lazy" />' . $caption . '</figure>';
+    }
+
+    return implode("\n", $chunks);
 }
 
 function normalizeSlug(string $value): string {

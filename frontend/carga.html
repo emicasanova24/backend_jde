@@ -8,7 +8,6 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-  <link href="shared-ui.css" rel="stylesheet"/>
   <script src="tailwind-config.js"></script>
   <style>
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
@@ -31,18 +30,15 @@
 </head>
 <body class="bg-surface text-on-surface font-body min-h-screen">
 <div id="sharedLayout" class="flex min-h-screen flex-col">
-  <main class="app-main flex-1 overflow-y-auto">
-    <div class="page-shell">
-      <div class="page-header">
-        <div>
-          <h1 class="page-title">Carga de datos</h1>
-          <p class="page-subtitle">Armado de fechas, resultados y exportaciones editoriales de la competencia.</p>
-        </div>
-        <span class="section-chip"><span class="material-symbols-outlined text-[16px]">edit_note</span>Operación de jornadas</span>
+  <main class="flex-1 overflow-y-auto p-4 md:p-8">
+    <div class="max-w-[1600px] mx-auto">
+      <div class="mb-4 sm:mb-6">
+        <h1 class="text-xl sm:text-2xl md:text-4xl font-black leading-tight tracking-[-0.033em] font-headline">Carga de Datos</h1>
+        <p class="text-on-surface-variant mt-1 text-sm sm:text-base">Gestión de jornadas, partidos y resultados</p>
       </div>
 
       <!-- Filtros categoría / torneo -->
-      <div class="panel-card rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_1fr] gap-2 sm:gap-3 items-center">
+      <div class="bg-surface-container-high border border-outline-variant/10 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_1fr] gap-2 sm:gap-3 items-center">
         <label class="text-sm font-semibold">Categoría:</label>
         <select id="categoriaFiltro" class="border border-outline-variant/20 rounded-lg p-2 w-full sm:w-auto">
           <option value="" selected disabled>Seleccionar categoría</option>
@@ -61,23 +57,23 @@
 
       <!-- Contenido principal: oculto hasta seleccionar filtros -->
       <div id="mainContent" class="hidden">
-          <div class="panel-card p-5 space-y-4 mb-6">
+          <div class="bg-white rounded-2xl shadow-md p-5 space-y-4 border border-slate-200 mb-6">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h2 class="text-lg font-semibold text-on-surface font-headline">Exportar semanario HTML</h2>
-                <p class="text-sm text-on-surface-variant">Genera un HTML standalone con los datos cargados hasta este momento para el torneo seleccionado.</p>
+                <h2 class="text-lg font-semibold text-slate-900">Exportar semanario HTML</h2>
+                <p class="text-sm text-slate-600">Genera un HTML standalone con los datos cargados hasta este momento para el torneo seleccionado.</p>
               </div>
               <div class="flex flex-col gap-2 sm:flex-row">
-                <button id="generarSemanarioBtn" class="px-4 py-2 rounded-xl bg-primary text-on-primary font-medium hover:bg-primary-dim transition-colors">Generar HTML</button>
-                <button id="copiarSemanarioBtn" class="px-4 py-2 rounded-xl border border-outline-variant/20 text-on-surface-variant font-medium hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>Copiar HTML</button>
+                <button id="generarSemanarioBtn" class="px-4 py-2 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800 transition-colors">Generar HTML</button>
+                <button id="copiarSemanarioBtn" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>Copiar HTML</button>
               </div>
             </div>
-            <p id="semanarioHtmlMeta" class="hidden text-sm text-on-surface-variant"></p>
-            <textarea id="semanarioHtmlOutput" class="w-full min-h-[320px] rounded-xl border border-outline-variant/20 bg-surface-container px-4 py-3 text-xs text-on-surface font-mono" spellcheck="false" placeholder="Acá se va a mostrar el HTML final listo para enviar."></textarea>
+            <p id="semanarioHtmlMeta" class="hidden text-sm text-slate-500"></p>
+            <textarea id="semanarioHtmlOutput" class="w-full min-h-[320px] rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-xs text-slate-800 font-mono" spellcheck="false" placeholder="Acá se va a mostrar el HTML final listo para enviar."></textarea>
           </div>
 
         <!-- Panel de jornadas -->
-        <div class="panel-card rounded-xl p-4 mb-6">
+        <div class="bg-surface-container-high border border-outline-variant/10 rounded-xl p-4 mb-6">
           <div class="flex items-center justify-between mb-3">
             <h2 class="text-lg font-bold font-headline">Jornadas</h2>
             <button id="nuevaJornadaBtn" class="flex items-center gap-1 bg-primary hover:bg-primary-dim text-on-primary px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
@@ -89,7 +85,7 @@
 
         <!-- Panel de partidos de la jornada -->
         <div id="jornadaDetail" class="hidden">
-          <div class="panel-card rounded-xl p-4 mb-6">
+          <div class="bg-surface-container-high border border-outline-variant/10 rounded-xl p-4 mb-6">
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-lg font-bold font-headline" id="jornadaTitle">Fecha 1</h2>
               <button id="agregarPartidoBtn" class="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
@@ -136,8 +132,8 @@
 </div>
 
 <!-- Modal: Cargar resultado -->
-<div id="resultModal" class="app-modal-backdrop hidden fixed inset-0 bg-black/50 flex items-start justify-center p-2 sm:p-4 z-50 overflow-y-auto">
-  <div class="app-modal-panel w-full max-w-full sm:max-w-lg md:max-w-2xl p-3 sm:p-4 md:p-6 my-4 sm:my-8">
+<div id="resultModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center p-2 sm:p-4 z-50 overflow-y-auto">
+  <div class="bg-surface-container-high border border-outline-variant/10 rounded-xl w-full max-w-full sm:max-w-lg md:max-w-2xl p-3 sm:p-4 md:p-6 my-4 sm:my-8">
     <div class="flex items-center justify-between mb-3 sm:mb-4">
       <h2 class="text-lg sm:text-xl font-bold font-headline">Cargar Resultado</h2>
       <button id="closeResultModal" class="text-on-surface-variant hover:text-on-surface transition-colors">
@@ -169,7 +165,7 @@
 
     <!-- Panel Goleadores -->
     <div id="panelGoles" class="mb-4">
-      <p class="text-xs text-on-surface-variant mb-2">Hacé clic en un jugador para registrar un gol.</p>
+      <p class="text-xs text-on-surface-variant mb-2">Podés registrar gol normal o gol en contra por jugador.</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
           <h4 class="text-sm font-semibold mb-2 text-primary font-headline" id="golesLocalTitle">Local</h4>
@@ -188,7 +184,7 @@
 
     <!-- Panel Tarjetas -->
     <div id="panelTarjetas" class="hidden mb-4">
-      <p class="text-xs text-on-surface-variant mb-2">Hacé clic en 🟨 para amarilla o 🟥 para roja.</p>
+      <p class="text-xs text-on-surface-variant mb-3">Hacé clic en el jugador para registrar una amarilla o una roja.</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
           <h4 class="text-sm font-semibold mb-2 text-primary font-headline" id="tarjetasLocalTitle">Local</h4>
@@ -205,11 +201,78 @@
       </div>
     </div>
 
+    <!-- Estado del partido -->
+    <div class="px-3 py-3 rounded-lg bg-slate-700/30 border border-slate-600/30 mb-3">
+      <p class="text-sm font-semibold text-slate-200 mb-2">Estado del partido</p>
+      <div class="space-y-2">
+        <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded p-2 transition-colors">
+          <input type="radio" name="resultEstado" value="en_curso" class="text-amber-500 focus:ring-amber-500"/>
+          <div class="flex-1">
+            <span class="text-sm font-medium text-amber-300">🟡 En curso</span>
+            <span class="block text-xs text-amber-500/70 mt-0.5">Guardar progreso sin actualizar tablas ni goleadores</span>
+          </div>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded p-2 transition-colors">
+          <input type="radio" name="resultEstado" value="jugado" class="text-emerald-500 focus:ring-emerald-500"/>
+          <div class="flex-1">
+            <span class="text-sm font-medium text-emerald-300">🟢 Finalizado</span>
+            <span class="block text-xs text-emerald-500/70 mt-0.5">Marcar como finalizado y actualizar tablas/goleadores</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
     <div class="flex flex-col sm:flex-row justify-end gap-2 pt-3 sm:pt-4 border-t border-outline-variant/10">
       <button id="cancelResult" class="px-4 py-2 border border-outline-variant/20 rounded-lg text-on-surface-variant hover:bg-surface-container text-sm sm:text-base transition-colors">Cancelar</button>
       <button id="saveResult" class="px-4 sm:px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-1 text-sm sm:text-base">
         <span class="material-symbols-outlined text-[18px]">save</span> Guardar Resultado
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Programar partido -->
+<div id="scheduleModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center p-2 sm:p-4 z-50 overflow-y-auto">
+  <div class="bg-surface-container-high border border-outline-variant/10 rounded-xl w-full max-w-full sm:max-w-lg p-4 sm:p-6 my-4 sm:my-8">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="text-lg sm:text-xl font-bold font-headline">Programar Partido</h2>
+        <p id="schedulePartidoLabel" class="text-xs text-on-surface-variant mt-1">—</p>
+      </div>
+      <button id="closeScheduleModal" class="text-on-surface-variant hover:text-on-surface transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <input type="hidden" id="schedulePartidoId"/>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+      <div>
+        <label class="block text-xs text-on-surface-variant mb-1">Fecha</label>
+        <input id="scheduleFecha" type="date" class="w-full border border-outline-variant/20 rounded-lg p-2 text-sm"/>
+      </div>
+      <div>
+        <label class="block text-xs text-on-surface-variant mb-1">Hora</label>
+        <input id="scheduleHora" type="time" class="w-full border border-outline-variant/20 rounded-lg p-2 text-sm"/>
+      </div>
+      <div>
+        <label class="block text-xs text-on-surface-variant mb-1">Estado</label>
+        <select id="scheduleEstado" class="w-full border border-outline-variant/20 rounded-lg p-2 text-sm">
+          <option value="pendiente">Pendiente</option>
+          <option value="en_curso">En curso</option>
+          <option value="postergado">Postergado</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-on-surface-variant mb-1">Estadio</label>
+        <input id="scheduleEstadio" type="text" class="w-full border border-outline-variant/20 rounded-lg p-2 text-sm" placeholder="Estadio del partido"/>
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-xs text-on-surface-variant mb-1">Link de YouTube</label>
+        <input id="scheduleBroadcast" type="url" class="w-full border border-outline-variant/20 rounded-lg p-2 text-sm" placeholder="https://youtube.com/live/..."/>
+      </div>
+    </div>
+    <div class="flex flex-col sm:flex-row justify-end gap-2 pt-3 border-t border-outline-variant/10">
+      <button id="cancelSchedule" class="px-4 py-2 border border-outline-variant/20 rounded-lg text-on-surface-variant hover:bg-surface-container text-sm transition-colors">Cancelar</button>
+      <button id="saveSchedule" class="px-4 py-2 bg-primary hover:bg-primary-dim text-on-primary rounded-lg font-semibold text-sm transition-colors">Guardar cambios</button>
     </div>
   </div>
 </div>

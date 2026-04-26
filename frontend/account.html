@@ -8,7 +8,6 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-  <link href="shared-ui.css" rel="stylesheet"/>
   <script src="tailwind-config.js"></script>
   <style>
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
@@ -16,11 +15,11 @@
 </head>
 <body class="bg-surface text-on-surface font-body selection:bg-primary-container/30">
 <div id="sharedLayout" class="flex min-h-screen flex-col">
-  <main class="app-main flex-1 overflow-y-auto">
+  <main class="flex-1 overflow-y-auto p-4 md:p-8">
     <div id="accountPage" class="max-w-7xl mx-auto">
 
       <!-- Profile header -->
-      <header class="panel-card mb-12 relative overflow-hidden p-6 sm:p-8 shadow-2xl">
+      <header class="mb-12 relative overflow-hidden p-8 rounded-xl bg-surface-container-low border border-outline-variant/10 shadow-2xl">
         <div class="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] rounded-full -mr-20 -mt-20"></div>
         <div class="relative flex flex-col md:flex-row items-center gap-8">
           <div class="relative group">
@@ -53,7 +52,7 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
         <!-- Personal info -->
-        <section class="panel-card-soft rounded-xl p-6 sm:p-8 border border-outline-variant/5">
+        <section class="bg-surface-container-low rounded-xl p-8 border border-outline-variant/5">
           <div class="flex items-center gap-3 mb-8">
             <span class="material-symbols-outlined text-primary">person</span>
             <h2 class="text-xl font-bold font-headline tracking-tight">Información Personal</h2>
@@ -84,7 +83,7 @@
         </section>
 
         <!-- Security -->
-        <section class="panel-card-soft rounded-xl p-6 sm:p-8 border border-outline-variant/5 flex flex-col">
+        <section class="bg-surface-container-low rounded-xl p-8 border border-outline-variant/5 flex flex-col">
           <div class="flex items-center gap-3 mb-8">
             <span class="material-symbols-outlined text-primary">security</span>
             <h2 class="text-xl font-bold font-headline tracking-tight">Seguridad</h2>
@@ -113,7 +112,7 @@
       </div>
 
       <!-- Preferences -->
-      <section class="panel-card-soft mb-12 rounded-xl p-6 sm:p-8 border border-outline-variant/5">
+      <section class="mb-12 bg-surface-container-low rounded-xl p-8 border border-outline-variant/5">
         <div class="flex items-center gap-3 mb-8">
           <span class="material-symbols-outlined text-primary">tune</span>
           <h2 class="text-xl font-bold font-headline tracking-tight">Preferencias</h2>

@@ -6,7 +6,7 @@ Proyecto servido con frontend estatico + API PHP sobre MySQL.
 
 - La salida del proyecto es PHP + MySQL.
 - El backend PHP vive en [api/index.php](c:\Users\Emi\Desktop\backend_jde\api\index.php).
-- El router local para desarrollo y validacion vive en [php-router.php](c:\Users\Emi\Desktop\backend_jde\php-router.php).
+- La entrada web local y de desarrollo vive en [index.php](c:\Users\Emi\Desktop\backend_jde\index.php).
 - El frontend se sirve de forma estatica desde [frontend](c:\Users\Emi\Desktop\backend_jde\frontend).
 
 ## Hosting objetivo
@@ -33,16 +33,16 @@ La configuracion actual queda preparada para hosting PHP clasico con Apache o eq
 
 1. Tener PHP 8.1+ con extensiones mysqli, pdo_mysql, openssl y mbstring.
 2. Configurar el archivo .env.
-3. Levantar el servidor con el router de desarrollo:
+3. Levantar el servidor con el front controller actual:
 
 ```powershell
-php -c api/php.ini -S localhost:8000 php-router.php
+php -c api/php.ini -S localhost:8000 index.php
 ```
 
 4. Verificar:
    - /api/health
    - /
-   - /login.html
+   - /login
    - login admin
    - generacion de semanario
 

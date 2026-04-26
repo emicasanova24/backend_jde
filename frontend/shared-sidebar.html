@@ -1,20 +1,14 @@
 <!-- Shared Sidebar + Header — inyectado por app.js en #sharedLayout -->
 
 <!-- Header sticky -->
-<header id="sidebarHeader" class="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-outline-variant/20 bg-surface/80 px-3 sm:px-4 backdrop-blur-md lg:px-8">
-  <div class="flex min-w-0 items-center gap-3 sm:gap-4 lg:gap-8">
-    <button id="sidebarToggle" aria-controls="sidebarNav" aria-expanded="false" class="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-surface-container-high lg:hidden">
+<header id="sidebarHeader" class="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-outline-variant/20 bg-surface/80 px-4 backdrop-blur-md lg:px-8">
+  <div class="flex items-center gap-4 lg:gap-8">
+    <button id="sidebarToggle" class="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-surface-container-high lg:hidden">
       <span class="material-symbols-outlined">menu</span>
     </button>
-    <a href="dashboard.html" class="flex min-w-0 items-center gap-3 text-primary">
-      <span class="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-        <img src="/assets/logo.png" alt="Juego de Equipo" class="h-8 w-auto object-contain" />
-      </span>
-      <span class="hidden min-w-0 flex-col sm:flex">
-        <span class="text-[10px] font-bold uppercase tracking-[0.24em] text-on-surface-variant">Panel JDE</span>
-        <span data-current-page class="truncate text-sm font-semibold text-on-surface font-headline">Panel Principal</span>
-      </span>
-    </a>
+    <div class="flex items-center text-primary">
+      <img src="/assets/logo.png" alt="Juego de Equipo" class="h-10 w-auto object-contain" />
+    </div>
   </div>
   <div class="flex items-center gap-2 lg:gap-4">
     <button class="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-surface-container-high">
@@ -37,18 +31,10 @@
 <div id="sidebarOverlay" class="fixed inset-0 z-40 bg-black/50 hidden lg:hidden"></div>
 
 <!-- Sidebar -->
-<aside id="sidebarNav" aria-hidden="true" class="fixed top-0 left-0 z-40 h-full -translate-x-full flex-col border-r border-outline-variant/20 bg-surface transition-transform duration-300 lg:static lg:translate-x-0 lg:flex">
+<aside id="sidebarNav" class="fixed top-0 left-0 z-40 h-full w-64 -translate-x-full flex-col border-r border-outline-variant/20 bg-surface transition-transform duration-300 lg:static lg:translate-x-0 lg:flex">
   <!-- Mobile close -->
   <div class="flex h-16 items-center justify-between border-b border-outline-variant/20 px-4 lg:hidden">
-    <div class="flex items-center gap-3">
-      <span class="flex h-10 w-10 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-        <img src="/assets/logo.png" alt="Juego de Equipo" class="h-7 w-auto object-contain" />
-      </span>
-      <div>
-        <span class="block text-[10px] font-bold uppercase tracking-[0.22em] text-on-surface-variant">Navegacion</span>
-        <span class="text-sm font-semibold font-headline text-on-surface">Juego de Equipo</span>
-      </div>
-    </div>
+    <span class="text-lg font-bold font-headline text-primary">Menú</span>
     <button id="sidebarClose" class="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-surface-container-high">
       <span class="material-symbols-outlined">close</span>
     </button>
@@ -74,6 +60,10 @@
     <a data-nav-page="carga.html" href="carga.html" class="sidebar-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body">
       <span class="material-symbols-outlined">edit_note</span>
       <span class="font-medium">Carga de Datos</span>
+    </a>
+    <a data-nav-page="noticias.html" href="noticias.html" class="sidebar-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body">
+      <span class="material-symbols-outlined">article</span>
+      <span class="font-medium">Noticias</span>
     </a>
     <a data-nav-page="estadisticas.html" href="estadisticas.html" class="sidebar-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body">
       <span class="material-symbols-outlined">bar_chart</span>

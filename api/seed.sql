@@ -117,51 +117,84 @@ CREATE TABLE IF NOT EXISTS noticias_relacionadas (
     CONSTRAINT fk_noticias_relacionadas_secundaria FOREIGN KEY (noticia_relacionada_id) REFERENCES noticias(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS home_config (
+    clave VARCHAR(120) NOT NULL PRIMARY KEY,
+    valor_string VARCHAR(512) NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS admin_account (
+    id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    phone VARCHAR(60) NOT NULL DEFAULT '',
+    bio VARCHAR(1000) NOT NULL DEFAULT '',
+    role_label VARCHAR(120) NOT NULL DEFAULT 'Administrador Principal',
+    admin_code VARCHAR(32) NOT NULL DEFAULT 'ADMIN-001',
+    avatar_url VARCHAR(255) NOT NULL DEFAULT '/assets/logo.png',
+    email_notifications TINYINT(1) NOT NULL DEFAULT 1,
+    live_notifications TINYINT(1) NOT NULL DEFAULT 1,
+    developer_mode TINYINT(1) NOT NULL DEFAULT 0,
+    member_since VARCHAR(16) NOT NULL DEFAULT '2023',
+    verified TINYINT(1) NOT NULL DEFAULT 1,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'editor',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 START TRANSACTION;
 
 INSERT INTO equipos (nombre, estadio, escudo, categoria, temporada_id) VALUES
-    ('Cecil A. Roberts', 'Estadio 1', '/logos/roberts.png', 'Primera', 2),
-    ('Unión Deportiva', 'Estadio 2', '/logos/uniontl.png', 'Primera', 2),
-    ('Unión de Bonifacio', 'Estadio 3', '/logos/bonifacio.png', 'Primera', 2),
-    ('Deportivo Garré', 'Estadio 4', '/logos/garre.png', 'Primera', 2),
-    ('Deportivo Maza', 'Estadio 5', '/logos/maza.png', 'Primera', 2),
-    ('Deportivo Argentino', 'Estadio 6', '/logos/deportivoarg.png', 'Primera', 2),
-    ('Atlético Quenumá', 'Estadio 7', '/logos/quenuma.png', 'Primera', 2),
-    ('Atlético Argentino', 'Estadio 8', '/logos/argentinos.png', 'Primera', 2),
-    ('Salazar FC', 'Estadio 9', '/logos/salazar.png', 'Primera', 2),
-    ('Jorge Newbery', 'Estadio 10', '/logos/newbery.png', 'Primera', 2),
-    ('El Ceibo', 'Estadio 11', '/logos/ceibo.png', 'Primera', 2),
-    ('La Gloria', 'Estadio 12', '/logos/lagloria.png', 'Primera', 2),
-    ('Deportivo 17', 'Estadio 13', '/logos/17.png', 'Primera', 2),
-    ('Juventud Unida', 'Estadio 14', '/logos/juventud.png', 'Primera', 2),
-    ('Cecil A. Roberts', 'Estadio 1', '/logos/roberts.png', 'Tercera', 2),
-    ('Unión Deportiva', 'Estadio 2', '/logos/uniontl.png', 'Tercera', 2),
-    ('Unión de Bonifacio', 'Estadio 3', '/logos/bonifacio.png', 'Tercera', 2),
-    ('Deportivo Garré', 'Estadio 4', '/logos/garre.png', 'Tercera', 2),
-    ('Deportivo Maza', 'Estadio 5', '/logos/maza.png', 'Tercera', 2),
-    ('Deportivo Argentino', 'Estadio 6', '/logos/deportivoarg.png', 'Tercera', 2),
-    ('Atlético Quenumá', 'Estadio 7', '/logos/quenuma.png', 'Tercera', 2),
-    ('Atlético Argentino', 'Estadio 8', '/logos/argentinos.png', 'Tercera', 2),
-    ('Salazar FC', 'Estadio 9', '/logos/salazar.png', 'Tercera', 2),
-    ('Jorge Newbery', 'Estadio 10', '/logos/newbery.png', 'Tercera', 2),
-    ('El Ceibo', 'Estadio 11', '/logos/ceibo.png', 'Tercera', 2),
-    ('La Gloria', 'Estadio 12', '/logos/lagloria.png', 'Tercera', 2),
-    ('Deportivo 17', 'Estadio 13', '/logos/17.png', 'Tercera', 2),
-    ('Juventud Unida', 'Estadio 14', '/logos/juventud.png', 'Tercera', 2),
-    ('Cecil A. Roberts', 'Estadio 1', '/logos/roberts.png', 'Senior', 2),
-    ('Unión Deportiva', 'Estadio 2', '/logos/uniontl.png', 'Senior', 2),
-    ('Unión de Bonifacio', 'Estadio 3', '/logos/bonifacio.png', 'Senior', 2),
-    ('Deportivo Garré', 'Estadio 4', '/logos/garre.png', 'Senior', 2),
-    ('Deportivo Maza', 'Estadio 5', '/logos/maza.png', 'Senior', 2),
-    ('Deportivo Argentino', 'Estadio 6', '/logos/deportivoarg.png', 'Senior', 2),
-    ('Ferro', 'Estadio 15', '/logos/ferro.png', 'Senior', 2),
-    ('Atlético Argentino', 'Estadio 8', '/logos/argentinos.png', 'Senior', 2),
-    ('Salazar FC', 'Estadio 9', '/logos/salazar.png', 'Senior', 2),
-    ('Jorge Newbery', 'Estadio 10', '/logos/newbery.png', 'Senior', 2),
-    ('El Ceibo', 'Estadio 11', '/logos/ceibo.png', 'Senior', 2),
-    ('La Gloria', 'Estadio 12', '/logos/lagloria.png', 'Senior', 2),
-    ('Deportivo 17', 'Estadio 13', '/logos/17.png', 'Senior', 2),
-    ('Juventud Unida', 'Estadio 14', '/logos/juventud.png', 'Senior', 2)
+    ('Cecil A. Roberts', 'Estadio 1', '/assets-equipos/logos/roberts.png', 'Primera', 2),
+    ('Unión Deportiva', 'Estadio 2', '/assets-equipos/logos/uniontl.png', 'Primera', 2),
+    ('Unión de Bonifacio', 'Estadio 3', '/assets-equipos/logos/bonifacio.png', 'Primera', 2),
+    ('Deportivo Garré', 'Estadio 4', '/assets-equipos/logos/garre.png', 'Primera', 2),
+    ('Deportivo Maza', 'Estadio 5', '/assets-equipos/logos/maza.png', 'Primera', 2),
+    ('Deportivo Argentino', 'Estadio 6', '/assets-equipos/logos/deportivoarg.png', 'Primera', 2),
+    ('Atlético Quenumá', 'Estadio 7', '/assets-equipos/logos/quenuma.png', 'Primera', 2),
+    ('Atlético Argentino', 'Estadio 8', '/assets-equipos/logos/argentinos.png', 'Primera', 2),
+    ('Salazar FC', 'Estadio 9', '/assets-equipos/logos/salazar.png', 'Primera', 2),
+    ('Jorge Newbery', 'Estadio 10', '/assets-equipos/logos/newbery.png', 'Primera', 2),
+    ('El Ceibo', 'Estadio 11', '/assets-equipos/logos/ceibo.png', 'Primera', 2),
+    ('La Gloria', 'Estadio 12', '/assets-equipos/logos/lagloria.png', 'Primera', 2),
+    ('Deportivo 17', 'Estadio 13', '/assets-equipos/logos/17.png', 'Primera', 2),
+    ('Juventud Unida', 'Estadio 14', '/assets-equipos/logos/juventud.png', 'Primera', 2),
+    ('Cecil A. Roberts', 'Estadio 1', '/assets-equipos/logos/roberts.png', 'Tercera', 2),
+    ('Unión Deportiva', 'Estadio 2', '/assets-equipos/logos/uniontl.png', 'Tercera', 2),
+    ('Unión de Bonifacio', 'Estadio 3', '/assets-equipos/logos/bonifacio.png', 'Tercera', 2),
+    ('Deportivo Garré', 'Estadio 4', '/assets-equipos/logos/garre.png', 'Tercera', 2),
+    ('Deportivo Maza', 'Estadio 5', '/assets-equipos/logos/maza.png', 'Tercera', 2),
+    ('Deportivo Argentino', 'Estadio 6', '/assets-equipos/logos/deportivoarg.png', 'Tercera', 2),
+    ('Atlético Quenumá', 'Estadio 7', '/assets-equipos/logos/quenuma.png', 'Tercera', 2),
+    ('Atlético Argentino', 'Estadio 8', '/assets-equipos/logos/argentinos.png', 'Tercera', 2),
+    ('Salazar FC', 'Estadio 9', '/assets-equipos/logos/salazar.png', 'Tercera', 2),
+    ('Jorge Newbery', 'Estadio 10', '/assets-equipos/logos/newbery.png', 'Tercera', 2),
+    ('El Ceibo', 'Estadio 11', '/assets-equipos/logos/ceibo.png', 'Tercera', 2),
+    ('La Gloria', 'Estadio 12', '/assets-equipos/logos/lagloria.png', 'Tercera', 2),
+    ('Deportivo 17', 'Estadio 13', '/assets-equipos/logos/17.png', 'Tercera', 2),
+    ('Juventud Unida', 'Estadio 14', '/assets-equipos/logos/juventud.png', 'Tercera', 2),
+    ('Cecil A. Roberts', 'Estadio 1', '/assets-equipos/logos/roberts.png', 'Senior', 2),
+    ('Unión Deportiva', 'Estadio 2', '/assets-equipos/logos/uniontl.png', 'Senior', 2),
+    ('Unión de Bonifacio', 'Estadio 3', '/assets-equipos/logos/bonifacio.png', 'Senior', 2),
+    ('Deportivo Garré', 'Estadio 4', '/assets-equipos/logos/garre.png', 'Senior', 2),
+    ('Deportivo Maza', 'Estadio 5', '/assets-equipos/logos/maza.png', 'Senior', 2),
+    ('Deportivo Argentino', 'Estadio 6', '/assets-equipos/logos/deportivoarg.png', 'Senior', 2),
+    ('Ferro', 'Estadio 15', '/assets-equipos/logos/ferro.png', 'Senior', 2),
+    ('Atlético Argentino', 'Estadio 8', '/assets-equipos/logos/argentinos.png', 'Senior', 2),
+    ('Salazar FC', 'Estadio 9', '/assets-equipos/logos/salazar.png', 'Senior', 2),
+    ('Jorge Newbery', 'Estadio 10', '/assets-equipos/logos/newbery.png', 'Senior', 2),
+    ('El Ceibo', 'Estadio 11', '/assets-equipos/logos/ceibo.png', 'Senior', 2),
+    ('La Gloria', 'Estadio 12', '/assets-equipos/logos/lagloria.png', 'Senior', 2),
+    ('Deportivo 17', 'Estadio 13', '/assets-equipos/logos/17.png', 'Senior', 2),
+    ('Juventud Unida', 'Estadio 14', '/assets-equipos/logos/juventud.png', 'Senior', 2)
 ON DUPLICATE KEY UPDATE
     estadio = VALUES(estadio),
     escudo = VALUES(escudo);
@@ -224,5 +257,34 @@ INSERT INTO noticias_relacionadas (noticia_id, noticia_relacionada_id)
 SELECT a.id, b.id FROM noticias a CROSS JOIN noticias b
 WHERE a.slug = 'semanario-digital-una-nueva-portada-para-la-liga'
   AND b.slug = 'mercado-de-planteles-la-liga-empieza-a-mirar-el-recambio';
+
+INSERT INTO admin_account (id, full_name, email, password, phone, bio, role_label, admin_code, avatar_url, email_notifications, live_notifications, developer_mode, member_since, verified)
+VALUES (
+        1,
+        'Administrador Juego de Equipo',
+        'admin@juegodeequipo.com',
+        '$2y$12$4TU0E4nwmP4wI0D2MZL3NubK9dTj8fZhyM0J4E74f6kA4L3o.rB4y',
+        '',
+        'Gestión integral de la plataforma administrativa y supervisión de ligas regionales.',
+        'Administrador Principal',
+        'ADMIN-001',
+        '/assets/logo.png',
+        1,
+        1,
+        0,
+        '2023',
+        1
+)
+ON DUPLICATE KEY UPDATE
+        full_name = VALUES(full_name),
+        email = VALUES(email),
+        role_label = VALUES(role_label),
+        admin_code = VALUES(admin_code),
+        avatar_url = VALUES(avatar_url),
+        email_notifications = VALUES(email_notifications),
+        live_notifications = VALUES(live_notifications),
+        developer_mode = VALUES(developer_mode),
+        member_since = VALUES(member_since),
+        verified = VALUES(verified);
 
 COMMIT;

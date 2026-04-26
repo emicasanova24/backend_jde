@@ -1,0 +1,527 @@
+<?php
+$homeTitle = 'Juego de Equipo — Liga de Fútbol';
+$homeDescription = 'Juego de Equipo — Toda la info de la liga: fixture, tabla de posiciones, goleadores, tarjetas y transmisiones en vivo.';
+$homeShareImage = App\absoluteUrl('/assets/share-default.png');
+$homeUrl = App\absoluteUrl('/');
+?>
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title><?= htmlspecialchars($homeTitle, ENT_QUOTES, 'UTF-8') ?></title>
+<?php require $root . '/views/partials/favicon-links.php'; ?>
+<meta name="description" content="<?= htmlspecialchars($homeDescription, ENT_QUOTES, 'UTF-8') ?>">
+<meta property="og:site_name" content="Juego de Equipo">
+<meta property="og:title" content="<?= htmlspecialchars($homeTitle, ENT_QUOTES, 'UTF-8') ?>">
+<meta property="og:description" content="<?= htmlspecialchars($homeDescription, ENT_QUOTES, 'UTF-8') ?>">
+<meta property="og:image" content="<?= htmlspecialchars($homeShareImage, ENT_QUOTES, 'UTF-8') ?>">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="<?= htmlspecialchars($homeUrl, ENT_QUOTES, 'UTF-8') ?>">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<?= htmlspecialchars($homeTitle, ENT_QUOTES, 'UTF-8') ?>">
+<meta name="twitter:description" content="<?= htmlspecialchars($homeDescription, ENT_QUOTES, 'UTF-8') ?>">
+<meta name="twitter:image" content="<?= htmlspecialchars($homeShareImage, ENT_QUOTES, 'UTF-8') ?>">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        primary: "#8c52ff",
+        "primary-light": "#a478ff",
+        "background-dark": "#120d1a",
+        "card-dark": "#1a1225",
+      },
+      fontFamily: { sans: ["Public Sans", "sans-serif"] },
+    },
+  },
+};
+</script>
+<style>
+body { font-family: "Public Sans", sans-serif; }
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; color: #ffffff; }
+select { background-color: #1e293b !important; color: #f8fafc !important; }
+
+/* Glass effect */
+.glass {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.glass-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+/* Neon pulse for live badge */
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(239,68,68,0.6); }
+  50% { opacity: 0.7; box-shadow: 0 0 20px rgba(239,68,68,0.8); }
+}
+.live-badge { animation: pulse-live 2s ease-in-out infinite; }
+
+/* Marquee animation */
+@keyframes scroll-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: scroll-marquee 40s linear infinite;
+  width: fit-content;
+}
+.marquee-track:hover { animation-play-state: paused; }
+.marquee-item {
+  flex: 0 0 auto;
+  max-width: 7rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.5);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(243,244,246,0.98) 100%);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+  filter: saturate(0.96) contrast(1.04);
+  transition: filter 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+.marquee-item:hover {
+  filter: saturate(1.05) contrast(1.08);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.26);
+}
+
+.footer-sponsors img {
+  padding: 0.35rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(244,245,246,0.98) 100%);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  filter: saturate(0.95) contrast(1.05);
+  transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease;
+}
+
+.footer-sponsors img:hover {
+  transform: translateY(-2px);
+  filter: saturate(1.05) contrast(1.08);
+  box-shadow: 0 12px 26px rgba(0,0,0,0.28);
+}
+
+@media (min-width: 640px) {
+  .marquee-item {
+    max-width: 10rem;
+  }
+}
+
+/* Mobile menu */
+#mobileMenu.open { max-height: 300px; opacity: 1; }
+#mobileMenu { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.3s, opacity 0.3s; }
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+</style>
+</head>
+<body class="bg-background-dark text-white antialiased selection:bg-primary selection:text-white">
+
+<!-- HEADER -->
+<header class="fixed top-0 w-full z-50 bg-background-dark/80 backdrop-blur-md border-b border-white/10">
+  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2">
+      <img src="/assets/logo.png" alt="Juego de Equipo" class="h-9 sm:h-11 w-auto object-contain"/>
+    </a>
+    <div class="hidden md:flex items-center space-x-6 lg:space-x-8">
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#fixture">Fixture</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tabla">Tabla</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#goleadores">Goleadores</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tarjetas">Tarjetas</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#h2h">H2H</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="/estadisticas">Estadísticas</a>
+    </div>
+    <button id="menuToggle" class="md:hidden text-white">
+      <span class="material-symbols-outlined text-[28px]">menu</span>
+    </button>
+  </nav>
+  <div id="mobileMenu" class="md:hidden bg-background-dark/95 border-t border-white/5 px-4">
+    <div class="flex flex-col gap-3 py-4">
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#fixture">Fixture</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tabla">Tabla</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#goleadores">Goleadores</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tarjetas">Tarjetas</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="#h2h">H2H</a>
+      <a class="text-sm font-semibold hover:text-primary transition-colors" href="/estadisticas">Estadísticas</a>
+    </div>
+  </div>
+</header>
+
+<!-- HERO + YOUTUBE -->
+<section class="relative pt-24 sm:pt-32 pb-8 sm:pb-12 overflow-hidden" id="hero">
+  <!-- Background blurs -->
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden">
+    <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/25 blur-[120px] rounded-full"></div>
+    <div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/10 blur-[120px] rounded-full"></div>
+  </div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+      <!-- Text -->
+      <div>
+        <div id="liveBadgeHero" class="hidden items-center gap-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-widest mb-6 live-badge w-fit">
+          <span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+          <span id="liveBadgeText">En Vivo</span>
+        </div>
+        <div id="noLiveBadge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest mb-6">
+          <span class="material-symbols-outlined text-[14px]">sports_soccer</span>
+          Temporada 2025/26
+        </div>
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black mb-4 sm:mb-6 leading-[1.1] uppercase">
+          Viví Cada <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">Partido</span>
+        </h1>
+        <p class="text-gray-400 text-base sm:text-lg mb-6 sm:mb-8 max-w-xl">
+          Seguí los resultados, el fixture, la tabla de goleadores y posiciones de todas las categorías de la liga.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <a href="#fixture" class="px-6 sm:px-8 py-3 sm:py-4 bg-primary text-white font-bold rounded-xl hover:shadow-[0_0_20px_rgba(140,82,255,0.4)] transition-all text-sm sm:text-base">Ver Fixture</a>
+          <a href="#tabla" class="px-6 sm:px-8 py-3 sm:py-4 bg-white/5 border border-white/10 font-bold rounded-xl hover:bg-white/10 transition-all text-sm sm:text-base">Tabla de Posiciones</a>
+        </div>
+      </div>
+      <!-- Video -->
+      <div class="relative group">
+        <div id="youtubeContainer" class="aspect-video w-full rounded-2xl overflow-hidden border-2 border-primary/30 shadow-2xl shadow-primary/10 relative bg-card-dark">
+          <!-- Placeholder (replaced by JS if live) -->
+          <div id="videoPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-card-dark to-background-dark">
+            <img src="/assets/logo.png" alt="Juego de Equipo" class="h-20 sm:h-28 w-auto object-contain opacity-40"/>
+            <p class="text-gray-500 font-semibold text-sm sm:text-base">Próximamente en vivo</p>
+            <div id="nextMatchInfo" class="text-center hidden">
+              <p class="text-gray-400 text-xs mb-2">Próximo partido</p>
+              <div id="nextMatchDetail" class="flex items-center gap-3 text-sm font-bold"></div>
+              <a id="nextMatchBroadcast" href="#" target="_blank" rel="noopener noreferrer" class="hidden mt-3 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold text-primary hover:bg-primary/20 transition-colors">
+                <span class="material-symbols-outlined text-[14px]">live_tv</span>
+                Ver transmisión
+              </a>
+            </div>
+          </div>
+        </div>
+        <div id="liveOverlayBadge" class="absolute -top-3 -right-3 bg-red-600 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-tighter shadow-xl hidden live-badge">
+          EN VIVO
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- BANNER 1: debajo del hero / $$$$ PREMIUM -->
+<?php $bannerType = 'billboard';    $bannerId = 'home-hero-d'; include $root . '/views/partials/banner.php'; ?>
+<?php $bannerType = 'mobile-large'; $bannerId = 'home-hero-m'; include $root . '/views/partials/banner.php'; ?>
+
+<!-- SPONSORS MARQUEE -->
+<div class="w-full py-8 sm:py-12" id="sponsors">
+  <p class="text-center text-[10px] font-bold tracking-[0.2em] text-gray-600 uppercase mb-4">Sponsors Oficiales</p>
+  <div class="max-w-7xl mx-auto glass rounded-2xl overflow-hidden py-4 sm:py-6 px-2">
+    <div class="marquee-track">
+      <img src="/sponsors/1.png" alt="Sponsor 1" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/2.png" alt="Sponsor 2" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/3.png" alt="Sponsor 3" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/4.png" alt="Sponsor 4" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/5.png" alt="Sponsor 5" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/6.png" alt="Sponsor 6" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/7.png" alt="Sponsor 7" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/8.png" alt="Sponsor 8" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/9.png" alt="Sponsor 9" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/10.png" alt="Sponsor 10" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/11.png" alt="Sponsor 11" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/12.png" alt="Sponsor 12" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/13.png" alt="Sponsor 13" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/14.png" alt="Sponsor 14" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/15.png" alt="Sponsor 15" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/16.png" alt="Sponsor 16" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/17.png" alt="Sponsor 17" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/18.png" alt="Sponsor 18" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/19.png" alt="Sponsor 19" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <!-- Duplicate for seamless loop -->
+      <img src="/sponsors/1.png" alt="Sponsor 1" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/2.png" alt="Sponsor 2" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/3.png" alt="Sponsor 3" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/4.png" alt="Sponsor 4" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/5.png" alt="Sponsor 5" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/6.png" alt="Sponsor 6" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/7.png" alt="Sponsor 7" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/8.png" alt="Sponsor 8" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/9.png" alt="Sponsor 9" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/10.png" alt="Sponsor 10" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/11.png" alt="Sponsor 11" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/12.png" alt="Sponsor 12" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/13.png" alt="Sponsor 13" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/14.png" alt="Sponsor 14" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/15.png" alt="Sponsor 15" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/16.png" alt="Sponsor 16" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/17.png" alt="Sponsor 17" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/18.png" alt="Sponsor 18" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+      <img src="/sponsors/19.png" alt="Sponsor 19" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
+    </div>
+  </div>
+</div>
+
+<!-- NOTICIAS -->
+<section id="homeNoticiasSection" class="hidden py-12 sm:py-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-end justify-between mb-8 sm:mb-10">
+      <div>
+        <h2 class="text-2xl sm:text-3xl font-black uppercase mb-1">Últimas <span class="text-primary">Noticias</span></h2>
+        <p class="text-gray-500 text-sm">Novedades y notas de la liga</p>
+      </div>
+    </div>
+    <div id="homeNoticiasGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6"></div>
+  </div>
+</section>
+
+<!-- BANNER 2: post-noticias / $$$ STANDARD -->
+<?php $bannerType = 'leaderboard';    $bannerId = 'home-news-d'; include $root . '/views/partials/banner.php'; ?>
+<?php $bannerType = 'mobile-banner';  $bannerId = 'home-news-m'; include $root . '/views/partials/banner.php'; ?>
+
+<!-- CATEGORY SELECTOR (sticky) -->
+<div class="sticky top-16 sm:top-20 z-40 bg-background-dark/90 backdrop-blur-md border-b border-white/5 py-3">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center gap-3 sm:gap-4">
+    <span class="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider">Categoría:</span>
+    <div class="flex rounded-xl bg-white/5 p-1 gap-1">
+      <button data-cat="Primera" class="cat-tab px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all bg-primary text-white">Primera</button>
+      <button data-cat="Tercera" class="cat-tab px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all text-gray-400 hover:text-white">Tercera</button>
+      <button data-cat="Senior" class="cat-tab px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all text-gray-400 hover:text-white">Senior</button>
+    </div>
+    <div class="flex items-center gap-2 ml-auto">
+      <span class="text-xs text-gray-500 hidden sm:inline">Torneo:</span>
+      <select id="homeTorneo" class="border border-white/10 rounded-lg px-3 py-2 text-sm bg-card-dark">
+        <option value="Apertura">Apertura</option>
+        <option value="Clausura">Clausura</option>
+        <option value="Anual">Anual</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- FIXTURE -->
+<section class="py-12 sm:py-16" id="fixture">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-end justify-between mb-8 sm:mb-10">
+      <div>
+        <h2 class="text-2xl sm:text-3xl font-black uppercase mb-1">Fixture & <span class="text-primary">Resultados</span></h2>
+        <p class="text-gray-500 text-sm">Partidos por jornada de la categoría seleccionada</p>
+      </div>
+    </div>
+    <div id="homeJornadaTabs" class="flex flex-wrap gap-2 mb-6"></div>
+    <div id="homeFixtureGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <p class="text-gray-500 col-span-full text-center py-8">Seleccioná una categoría para ver el fixture</p>
+    </div>
+  </div>
+</section>
+
+<!-- BANNER 3: entre fixture y tabla / $$$ STANDARD -->
+<div class="hidden md:flex justify-center gap-6 py-5 px-4" aria-label="Espacios publicitarios">
+  <?php $bannerType = 'rectangle'; $bannerId = 'home-fxt-tbl-d1'; $bannerClasses = 'flex'; include $root . '/views/partials/banner.php'; ?>
+  <?php $bannerType = 'rectangle'; $bannerId = 'home-fxt-tbl-d2'; $bannerClasses = 'flex'; include $root . '/views/partials/banner.php'; ?>
+</div>
+<div class="flex md:hidden justify-center py-4 px-4" aria-label="Espacio publicitario">
+  <?php $bannerType = 'rectangle'; $bannerId = 'home-fxt-tbl-m'; $bannerClasses = 'flex'; include $root . '/views/partials/banner.php'; ?>
+</div>
+
+<!-- TABLA DE POSICIONES -->
+<section class="py-12 sm:py-16 bg-card-dark/30" id="tabla">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-8 sm:mb-10">
+      <h2 class="text-2xl sm:text-3xl font-black uppercase mb-1">Tabla de <span class="text-primary">Posiciones</span></h2>
+      <p class="text-gray-500 text-sm">Clasificación actualizada en tiempo real</p>
+    </div>
+    <div class="glass-card rounded-2xl overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[600px]">
+          <thead>
+            <tr class="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wider">
+              <th class="px-3 sm:px-4 py-3 text-left">#</th>
+              <th class="px-3 sm:px-4 py-3 text-left">Equipo</th>
+              <th class="px-3 sm:px-4 py-3 text-center">PTS</th>
+              <th class="px-3 sm:px-4 py-3 text-center">PJ</th>
+              <th class="px-3 sm:px-4 py-3 text-center">PG</th>
+              <th class="px-3 sm:px-4 py-3 text-center">PE</th>
+              <th class="px-3 sm:px-4 py-3 text-center">PP</th>
+              <th class="px-3 sm:px-4 py-3 text-center">GF</th>
+              <th class="px-3 sm:px-4 py-3 text-center">GC</th>
+              <th class="px-3 sm:px-4 py-3 text-center">DG</th>
+            </tr>
+          </thead>
+          <tbody id="homeTablaBody" class="divide-y divide-white/5">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BANNER 4: entre tabla y goleadores / $$ ECONOMY -->
+<?php $bannerType = 'rectangle'; $bannerId = 'home-tbl-gol'; include $root . '/views/partials/banner.php'; ?>
+
+<!-- GOLEADORES -->
+<section class="py-12 sm:py-16" id="goleadores">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-8 sm:mb-10">
+      <h2 class="text-2xl sm:text-3xl font-black uppercase mb-1">Ranking de <span class="text-primary">Goleadores</span></h2>
+      <p class="text-gray-500 text-sm">Top 15 goleadores de la categoría</p>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4" id="homeGoleadoresGrid">
+    </div>
+  </div>
+</section>
+
+<!-- TARJETAS -->
+<section class="py-12 sm:py-16 bg-card-dark/30" id="tarjetas">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-8 sm:mb-10">
+      <h2 class="text-2xl sm:text-3xl font-black uppercase mb-1">Ranking de <span class="text-primary">Tarjetas</span></h2>
+      <p class="text-gray-500 text-sm">Disciplina de la categoría seleccionada</p>
+    </div>
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- Amarillas -->
+      <div class="glass-card rounded-2xl overflow-hidden">
+        <div class="flex items-center gap-2 px-4 sm:px-6 py-4 border-b border-white/5">
+          <img src="/assets/amarilla.png" alt="Amarilla" class="h-5 w-auto" onerror="this.style.display='none'"/>
+          <h3 class="font-bold text-sm sm:text-base">Tarjetas Amarillas</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm min-w-[300px]">
+            <thead><tr class="text-gray-400 text-xs uppercase border-b border-white/5"><th class="px-4 py-2 text-left">#</th><th class="px-4 py-2 text-left">Jugador</th><th class="px-4 py-2 text-left">Equipo</th><th class="px-4 py-2 text-center">🟨</th></tr></thead>
+            <tbody id="homeAmarillasBody" class="divide-y divide-white/5"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Rojas -->
+      <div class="glass-card rounded-2xl overflow-hidden">
+        <div class="flex items-center gap-2 px-4 sm:px-6 py-4 border-b border-white/5">
+          <img src="/assets/roja.png" alt="Roja" class="h-5 w-auto" onerror="this.style.display='none'"/>
+          <h3 class="font-bold text-sm sm:text-base">Tarjetas Rojas</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm min-w-[300px]">
+            <thead><tr class="text-gray-400 text-xs uppercase border-b border-white/5"><th class="px-4 py-2 text-left">#</th><th class="px-4 py-2 text-left">Jugador</th><th class="px-4 py-2 text-left">Equipo</th><th class="px-4 py-2 text-center">🟥</th></tr></thead>
+            <tbody id="homeRojasBody" class="divide-y divide-white/5"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- H2H HISTÓRICOS -->
+<section class="py-12 sm:py-16" id="h2h">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-8 sm:mb-10">
+      <h2 class="text-2xl sm:text-3xl font-black uppercase mb-1">Historial <span class="text-primary">H2H</span></h2>
+      <p class="text-gray-500 text-sm">Compará el historial entre dos equipos</p>
+    </div>
+    <div class="glass-card rounded-2xl p-4 sm:p-6 mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto] gap-3 items-end">
+        <div>
+          <label class="text-xs font-semibold text-gray-400 block mb-1">Equipo 1</label>
+          <select id="homeH2hTeam1" class="border border-white/10 rounded-lg p-2.5 text-sm w-full">
+            <option value="" disabled selected>Seleccionar equipo</option>
+          </select>
+        </div>
+        <span class="text-gray-600 font-black text-lg text-center py-2 hidden sm:block">VS</span>
+        <div>
+          <label class="text-xs font-semibold text-gray-400 block mb-1">Equipo 2</label>
+          <select id="homeH2hTeam2" class="border border-white/10 rounded-lg p-2.5 text-sm w-full">
+            <option value="" disabled selected>Seleccionar equipo</option>
+          </select>
+        </div>
+        <button id="homeH2hBtn" class="bg-primary px-5 py-2.5 rounded-lg text-white text-sm font-bold hover:bg-primary-light transition-colors w-full sm:w-auto">Comparar</button>
+      </div>
+    </div>
+    <div id="homeH2hResumen" class="mb-6"></div>
+    <div id="homeH2hPartidos" class="space-y-3"></div>
+  </div>
+</section>
+
+<!-- BANNER 5: pre-footer / $$ ECONOMY -->
+<?php $bannerType = 'leaderboard';   $bannerId = 'home-prefooter-d'; include $root . '/views/partials/banner.php'; ?>
+<?php $bannerType = 'mobile-banner'; $bannerId = 'home-prefooter-m'; include $root . '/views/partials/banner.php'; ?>
+
+<!-- FOOTER -->
+<footer class="bg-background-dark pt-12 sm:pt-16 pb-8 border-t border-white/5">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 mb-10 sm:mb-14">
+      <div class="sm:col-span-2">
+        <div class="flex items-center gap-2 mb-4">
+          <img src="/assets/logo.png" alt="Juego de Equipo" class="h-8 w-auto object-contain"/>
+        </div>
+        <p class="text-gray-500 max-w-sm mb-6 text-sm">La liga de fútbol. Seguí todos los resultados, posiciones y goleadores en tiempo real.</p>
+        <div class="flex gap-3">
+          <a class="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all" href="https://www.instagram.com/juegodequipo/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <span class="material-symbols-outlined text-[18px]">photo_camera</span>
+          </a>
+          <a class="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all" href="https://www.facebook.com/juegodquipo" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+            <svg viewBox="0 0 24 24" class="h-[18px] w-[18px] fill-current" aria-hidden="true">
+              <path d="M13.5 21v-8h2.7l.4-3h-3.1V8.1c0-.9.3-1.6 1.6-1.6h1.7V3.8c-.3 0-1.3-.1-2.5-.1-2.4 0-4.1 1.4-4.1 4.2V10H7.9v3h2.9v8h2.7z"/>
+            </svg>
+          </a>
+          <a class="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all" href="https://www.youtube.com/@JuegodeEquipo" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+            <span class="material-symbols-outlined text-[18px]">smart_display</span>
+          </a>
+        </div>
+      </div>
+      <div>
+        <h4 class="font-bold uppercase text-xs tracking-widest mb-4 text-gray-400">Secciones</h4>
+        <ul class="space-y-3 text-sm text-gray-500">
+          <li><a class="hover:text-white transition-colors" href="#fixture">Fixture</a></li>
+          <li><a class="hover:text-white transition-colors" href="#tabla">Tabla de Posiciones</a></li>
+          <li><a class="hover:text-white transition-colors" href="#goleadores">Goleadores</a></li>
+          <li><a class="hover:text-white transition-colors" href="#tarjetas">Tarjetas</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold uppercase text-xs tracking-widest mb-4 text-gray-400">Links</h4>
+        <ul class="space-y-3 text-sm text-gray-500">
+          <li><a class="hover:text-white transition-colors" href="/estadisticas">Estadísticas</a></li>
+          <li><a class="hover:text-white transition-colors" href="#h2h">Históricos H2H</a></li>
+        </ul>
+      </div>
+    </div>
+    <!-- Footer sponsors mini -->
+    <div class="border-t border-white/5 pt-6 mb-6">
+      <p class="text-[9px] font-bold tracking-widest text-gray-600 uppercase text-center mb-3">Sponsors</p>
+      <div class="footer-sponsors flex flex-wrap justify-center gap-3 sm:gap-4">
+        <img src="/sponsors/1.png" alt="Sponsor 1" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/2.png" alt="Sponsor 2" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/3.png" alt="Sponsor 3" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/4.png" alt="Sponsor 4" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/5.png" alt="Sponsor 5" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/6.png" alt="Sponsor 6" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/7.png" alt="Sponsor 7" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/8.png" alt="Sponsor 8" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/9.png" alt="Sponsor 9" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/10.png" alt="Sponsor 10" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/11.png" alt="Sponsor 11" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/12.png" alt="Sponsor 12" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/13.png" alt="Sponsor 13" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/14.png" alt="Sponsor 14" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/15.png" alt="Sponsor 15" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/16.png" alt="Sponsor 16" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/17.png" alt="Sponsor 17" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/18.png" alt="Sponsor 18" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/19.png" alt="Sponsor 19" class="h-6 sm:h-8 object-contain grayscale"/>
+      </div>
+    </div>
+    <div class="pt-6 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-gray-600">
+      <p>&copy; 2026 Juego de Equipo. Todos los derechos reservados.</p>
+      <p>Temporada 2025/26</p>
+    </div>
+  </div>
+</footer>
+
+<script src="/frontend/home.js"></script>
+
+<!-- BANNER 6: sticky mobile / $$$$ PREMIUM -->
+<?php $bannerType = 'mobile-sticky'; $bannerId = 'home-sticky-m'; include $root . '/views/partials/banner.php'; ?>
+</body>
+</html>

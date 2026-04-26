@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Carga de Datos — Juego de Equipo</title>
+  <?php require $root . '/views/partials/favicon-links.php'; ?>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script src="/frontend/tailwind-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+  <style>
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    input, textarea { background-color: transparent !important; color: #f3f4f6; }
+    select { background-color: #1a191b !important; color: #ffffff !important; }
+    input::placeholder, textarea::placeholder { color: #adaaab; }
+    .jornada-btn { transition: all 0.2s; }
+    .jornada-btn.active { background-color: #8c52ff; color: white; box-shadow: 0 0 0 2px rgba(140,82,255,0.4); }
+    .jornada-btn:not(.active) { background-color: rgba(140, 82, 255, 0.15); color: #adaaab; }
+    .jornada-completa::after { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-left: 6px; }
+    .jornada-parcial::after { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #eab308; margin-left: 6px; }
+    .jornada-vacia::after { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #767576; margin-left: 6px; }
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 100; padding: 0.75rem 1.5rem; border-radius: 0.5rem; color: white; font-weight: 600; transform: translateY(100px); opacity: 0; transition: all 0.3s ease; pointer-events: none; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-success { background-color: #16a34a; }
+    .toast-error { background-color: #dc2626; }
+    .logo-team { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: rgba(255,255,255,0.1); flex-shrink: 0; }
+    .logo-team-sm { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; background: rgba(255,255,255,0.1); flex-shrink: 0; }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body min-h-screen">
+<div id="sharedLayout" class="flex min-h-screen flex-col">
+  <main class="flex-1 overflow-y-auto p-4 md:p-8">
+    <div class="max-w-[1600px] mx-auto">
+      <div class="mb-4 sm:mb-6">
+        <h1 class="text-xl sm:text-2xl md:text-4xl font-black leading-tight tracking-[-0.033em] font-headline">Carga de Datos</h1>
+        <p class="text-on-surface-variant mt-1 text-sm sm:text-base">Gestión de jornadas, partidos y resultados</p>
+      </div>
+
+      <!-- Filtros categoría / torneo -->
+      <div class="bg-surface-container-high border border-outline-variant/10 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-[auto_1fr_auto_1fr] gap-2 sm:gap-3 items-center">
+        <label class="text-sm font-semibold">Categoría:</label>
+        <select id="categoriaFiltro" class="border border-outline-variant/20 rounded-lg p-2 w-full sm:w-auto">
+          <option value="" selected disabled>Seleccionar categoría</option>
+          <option value="Primera">Primera</option>
+          <option value="Tercera">Tercera</option>
+          <option value="Senior">Senior</option>
+        </select>
+        <label class="text-sm font-semibold">Torneo:</label>
+        <select id="torneoFiltro" class="border border-outline-variant/20 rounded-lg p-2 w-full sm:w-auto">
+          <option value="" selected disabled>Seleccionar torneo</option>
+          <option value="Apertura">Apertura</option>
+          <option value="Clausura">Clausura</option>
+          <option value="Anual">Anual</option>
+        </select>
+      </div>
+
+      <!-- Contenido principal: oculto hasta seleccionar filtros -->
+      <div id="mainContent" class="hidden">
+          <div class="bg-white rounded-2xl shadow-md p-5 space-y-4 border border-slate-200 mb-6">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 class="text-lg font-semibold text-slate-900">Exportar semanario HTML</h2>
+                <p class="text-sm text-slate-600">Genera un HTML standalone con los datos cargados hasta este momento para el torneo seleccionado.</p>
+              </div>
+              <div class="flex flex-col gap-2 sm:flex-row">
+                <button id="generarSemanarioBtn" class="px-4 py-2 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800 transition-colors">Generar HTML</button>
+                <button id="copiarSemanarioBtn" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>Copiar HTML</button>
+              </div>
+            </div>
+            <p id="semanarioHtmlMeta" class="hidden text-sm text-slate-500"></p>
+            <textarea id="semanarioHtmlOutput" class="w-full min-h-[320px] rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-xs text-slate-800 font-mono" spellcheck="false" placeholder="Acá se va a mostrar el HTML final listo para enviar."></textarea>
+          </div>
+
+        <!-- Panel de jornadas -->
+        <div class="bg-surface-container-high border border-outline-variant/10 rounded-xl p-4 mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-bold font-headline">Jornadas</h2>
+            <button id="nuevaJornadaBtn" class="flex items-center gap-1 bg-primary hover:bg-primary-dim text-on-primary px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+              <span class="material-symbols-outlined text-[18px]">add</span> Nueva Fecha
+            </button>
+          </div>
+          <div id="jornadasContainer" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Panel de partidos de la jornada -->
+        <div id="jornadaDetail" class="hidden">
+          <div class="bg-surface-container-high border border-outline-variant/10 rounded-xl p-4 mb-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-bold font-headline" id="jornadaTitle">Fecha 1</h2>
+              <button id="agregarPartidoBtn" class="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                <span class="material-symbols-outlined text-[18px]">add</span> Agregar Partido
+              </button>
+            </div>
+
+            <!-- Fixture Builder -->
+            <div id="fixtureBuilder" class="hidden mb-4">
+              <div class="border border-primary/20 rounded-xl p-4 bg-primary/5">
+                <h3 class="text-sm font-bold text-primary mb-3 flex items-center gap-1 font-headline">
+                  <span class="material-symbols-outlined text-[18px]">edit_calendar</span> Armar Fixture
+                </h3>
+                <div id="fixtureRows" class="space-y-3"></div>
+                <div class="flex flex-wrap gap-2 mt-4">
+                  <button id="addFixtureRowBtn" class="flex items-center gap-1 text-sm text-primary hover:text-primary-dim font-semibold">
+                    <span class="material-symbols-outlined text-[16px]">add_circle</span> Agregar otro partido
+                  </button>
+                  <div class="flex-1"></div>
+                  <button id="cancelFixtureBtn" class="px-4 py-2 border border-outline-variant/20 rounded-lg text-on-surface-variant hover:bg-surface-container text-sm transition-colors">Cancelar</button>
+                  <button id="saveFixtureBtn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm flex items-center gap-1 transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">save</span> Guardar Fixture
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Existing matches list -->
+            <div id="partidosContainer" class="space-y-3"></div>
+            <div id="noPartidos" class="hidden text-center py-8 text-on-surface-variant">
+              <span class="material-symbols-outlined text-4xl mb-2 block">sports_soccer</span>
+              No hay partidos en esta fecha. Usá "Agregar Partido" para armar el fixture.
+            </div>
+
+            <!-- Export flyer buttons (visible when jornada completa) -->
+            <div id="flyerExportBar" class="hidden mt-4 pt-4 border-t border-outline-variant/10">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <!-- Fixture -->
+                <div id="flyerFixtureSection" class="hidden bg-white/5 border border-white/10 rounded-lg p-3">
+                  <p class="text-xs text-on-surface-variant mb-2 font-semibold uppercase tracking-wide">Fixture</p>
+                  <div class="flex gap-2">
+                    <button id="btnFixtureStory" class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition-all">
+                      <span class="material-symbols-outlined text-[16px]">phone_iphone</span> Story
+                    </button>
+                    <button id="btnFixtureFeed" class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition-all">
+                      <span class="material-symbols-outlined text-[16px]">crop_square</span> Feed
+                    </button>
+                  </div>
+                </div>
+                <!-- Resultados -->
+                <div id="flyerResultsSection" class="hidden bg-white/5 border border-white/10 rounded-lg p-3">
+                  <p class="text-xs text-on-surface-variant mb-2 font-semibold uppercase tracking-wide">Resultados</p>
+                  <div class="flex gap-2">
+                    <button id="btnResultStory" class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition-all">
+                      <span class="material-symbols-outlined text-[16px]">phone_iphone</span> Story
+                    </button>
+                    <button id="btnResultFeed" class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition-all">
+                      <span class="material-symbols-outlined text-[16px]">crop_square</span> Feed
+                    </button>
+                  </div>
+                </div>
+                <!-- Posiciones -->
+                <div id="flyerPositionsSection" class="hidden bg-white/5 border border-white/10 rounded-lg p-3">
+                  <p class="text-xs text-on-surface-variant mb-2 font-semibold uppercase tracking-wide">Posiciones</p>
+                  <div class="flex gap-2">
+                    <button id="btnTablaStory" class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition-all">
+                      <span class="material-symbols-outlined text-[16px]">phone_iphone</span> Story
+                    </button>
+                    <button id="btnTablaFeed" class="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white px-3 py-2 rounded-lg text-xs font-semibold transition-all">
+                      <span class="material-symbols-outlined text-[16px]">crop_square</span> Feed
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="noFilters" class="text-center py-8 sm:py-12 md:py-16 text-on-surface-variant">
+        <span class="material-symbols-outlined text-4xl sm:text-5xl mb-2 sm:mb-3 block">filter_alt</span>
+        <p class="text-base sm:text-lg font-semibold">Seleccioná categoría y torneo para comenzar</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal: Cargar resultado -->
+<div id="resultModal" class="hidden fixed inset-0 bg-black/50 flex items-start justify-center p-2 sm:p-4 z-50 overflow-y-auto">
+  <div class="bg-surface-container-high border border-outline-variant/10 rounded-xl w-full max-w-full sm:max-w-lg md:max-w-2xl p-3 sm:p-4 md:p-6 my-4 sm:my-8">
+    <div class="flex items-center justify-between mb-3 sm:mb-4">
+      <h2 class="text-lg sm:text-xl font-bold font-headline">Cargar Resultado</h2>
+      <button id="closeResultModal" class="text-on-surface-variant hover:text-on-surface transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <input type="hidden" id="resultPartidoId"/>
+
+    <!-- Score -->
+    <div class="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6 items-center text-center">
+      <div>
+        <img id="resultLocalEscudo" class="logo-team mx-auto mb-1" src="" alt=""/>
+        <p class="font-bold text-sm sm:text-lg truncate" id="resultLocalName">—</p>
+        <input id="resultGolesLocal" type="number" min="0" value="0" class="w-14 sm:w-20 mx-auto border border-outline-variant/20 rounded-lg p-1.5 sm:p-2 text-center text-xl sm:text-2xl font-bold mt-1 sm:mt-2"/>
+      </div>
+      <div class="text-2xl sm:text-3xl font-bold text-on-surface-variant">vs</div>
+      <div>
+        <img id="resultVisitanteEscudo" class="logo-team mx-auto mb-1" src="" alt=""/>
+        <p class="font-bold text-sm sm:text-lg truncate" id="resultVisitanteName">—</p>
+        <input id="resultGolesVisitante" type="number" min="0" value="0" class="w-14 sm:w-20 mx-auto border border-outline-variant/20 rounded-lg p-1.5 sm:p-2 text-center text-xl sm:text-2xl font-bold mt-1 sm:mt-2"/>
+      </div>
+    </div>
+
+    <!-- Tabs: Goleadores / Tarjetas -->
+    <div class="flex border-b border-outline-variant/10 mb-4">
+      <button id="tabGoles" class="px-4 py-2 text-sm font-bold border-b-2 border-primary text-primary">Goleadores</button>
+      <button id="tabTarjetas" class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors">Tarjetas</button>
+    </div>
+
+    <!-- Panel Goleadores -->
+    <div id="panelGoles" class="mb-4">
+      <p class="text-xs text-on-surface-variant mb-2">Hacé clic en un jugador para registrar un gol.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div>
+          <h4 class="text-sm font-semibold mb-2 text-primary font-headline" id="golesLocalTitle">Local</h4>
+          <div id="golesLocalList" class="space-y-1 max-h-40 sm:max-h-48 overflow-y-auto"></div>
+        </div>
+        <div>
+          <h4 class="text-sm font-semibold mb-2 text-primary font-headline" id="golesVisitanteTitle">Visitante</h4>
+          <div id="golesVisitanteList" class="space-y-1 max-h-40 sm:max-h-48 overflow-y-auto"></div>
+        </div>
+      </div>
+      <div class="mt-3">
+        <h4 class="text-sm font-semibold mb-1 font-headline">Goles registrados:</h4>
+        <div id="golesRegistrados" class="flex flex-wrap gap-1 min-h-[2rem]"></div>
+      </div>
+    </div>
+
+    <!-- Panel Tarjetas -->
+    <div id="panelTarjetas" class="hidden mb-4">
+      <p class="text-xs text-on-surface-variant mb-2">Hacé clic en 🟨 para amarilla o 🟥 para roja.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div>
+          <h4 class="text-sm font-semibold mb-2 text-primary font-headline" id="tarjetasLocalTitle">Local</h4>
+          <div id="tarjetasLocalList" class="space-y-1 max-h-40 sm:max-h-48 overflow-y-auto"></div>
+        </div>
+        <div>
+          <h4 class="text-sm font-semibold mb-2 text-primary font-headline" id="tarjetasVisitanteTitle">Visitante</h4>
+          <div id="tarjetasVisitanteList" class="space-y-1 max-h-40 sm:max-h-48 overflow-y-auto"></div>
+        </div>
+      </div>
+      <div class="mt-3">
+        <h4 class="text-sm font-semibold mb-1 font-headline">Tarjetas registradas:</h4>
+        <div id="tarjetasRegistradas" class="flex flex-wrap gap-1 min-h-[2rem]"></div>
+      </div>
+    </div>
+
+    <!-- Estado del partido -->
+    <div class="px-3 py-3 rounded-lg bg-slate-700/30 border border-slate-600/30 mb-3">
+      <p class="text-sm font-semibold text-slate-200 mb-2">Estado del partido</p>
+      <div class="space-y-2">
+        <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded p-2 transition-colors">
+          <input type="radio" name="resultEstado" value="en_curso" class="text-amber-500 focus:ring-amber-500"/>
+          <div class="flex-1">
+            <span class="text-sm font-medium text-amber-300">🟡 En curso</span>
+            <span class="block text-xs text-amber-500/70 mt-0.5">Guardar progreso sin actualizar tablas ni goleadores</span>
+          </div>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded p-2 transition-colors">
+          <input type="radio" name="resultEstado" value="jugado" class="text-emerald-500 focus:ring-emerald-500"/>
+          <div class="flex-1">
+            <span class="text-sm font-medium text-emerald-300">🟢 Finalizado</span>
+            <span class="block text-xs text-emerald-500/70 mt-0.5">Marcar como finalizado y actualizar tablas/goleadores</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row justify-end gap-2 pt-3 sm:pt-4 border-t border-outline-variant/10">
+      <button id="cancelResult" class="px-4 py-2 border border-outline-variant/20 rounded-lg text-on-surface-variant hover:bg-surface-container text-sm sm:text-base transition-colors">Cancelar</button>
+      <button id="saveResult" class="px-4 sm:px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-1 text-sm sm:text-base">
+        <span class="material-symbols-outlined text-[18px]">save</span> Guardar Resultado
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Programar partido -->
+<div id="scheduleModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-2 sm:p-4 z-50">
+  <div class="bg-surface-container-high border border-outline-variant/10 rounded-xl w-full max-w-md p-4 sm:p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg sm:text-xl font-bold font-headline">Programar Partido</h2>
+      <button id="closeScheduleModal" class="text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <input type="hidden" id="schedulePartidoId"/>
+
+    <div class="space-y-3">
+      <div>
+        <p class="text-xs text-on-surface-variant mb-1">Partido</p>
+        <p id="schedulePartidoLabel" class="text-sm font-semibold">—</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="scheduleFecha" class="block text-xs font-semibold text-on-surface-variant mb-1">Fecha</label>
+          <input id="scheduleFecha" type="date" class="w-full border border-outline-variant/20 rounded-lg p-2"/>
+        </div>
+        <div>
+          <label for="scheduleHora" class="block text-xs font-semibold text-on-surface-variant mb-1">Hora</label>
+          <input id="scheduleHora" type="time" class="w-full border border-outline-variant/20 rounded-lg p-2"/>
+        </div>
+      </div>
+
+      <div>
+        <label for="scheduleEstadio" class="block text-xs font-semibold text-on-surface-variant mb-1">Estadio</label>
+        <input id="scheduleEstadio" type="text" class="w-full border border-outline-variant/20 rounded-lg p-2" placeholder="Nombre del estadio"/>
+      </div>
+
+      <div>
+        <label for="scheduleEstado" class="block text-xs font-semibold text-on-surface-variant mb-1">Estado</label>
+        <select id="scheduleEstado" class="w-full border border-outline-variant/20 rounded-lg p-2">
+          <option value="pendiente">Pendiente</option>
+          <option value="en_curso">En curso</option>
+          <option value="postergado">Postergado</option>
+          <option value="suspendido">Suspendido</option>
+          <option value="cancelado">Cancelado</option>
+          <option value="jugado">Jugado</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="scheduleBroadcast" class="block text-xs font-semibold text-on-surface-variant mb-1">Link transmisión (opcional)</label>
+        <input id="scheduleBroadcast" type="url" class="w-full border border-outline-variant/20 rounded-lg p-2" placeholder="https://..."/>
+      </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row justify-end gap-2 mt-5 pt-4 border-t border-outline-variant/10">
+      <button id="cancelSchedule" type="button" class="px-4 py-2 border border-outline-variant/20 rounded-lg text-on-surface-variant hover:bg-surface-container text-sm transition-colors">Cancelar</button>
+      <button id="saveSchedule" type="button" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm transition-colors">Guardar programación</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Flyer Preview -->
+<div id="flyerModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
+  <div class="bg-surface-container-high border border-outline-variant/10 rounded-xl w-full max-w-lg p-4 my-4">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-bold font-headline" id="flyerModalTitle">Preview Flyer</h2>
+      <button id="closeFlyerModal" class="text-on-surface-variant hover:text-on-surface transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div id="flyerPreviewWrap" class="flex justify-center mb-4 overflow-hidden rounded-lg bg-black/40"></div>
+    <div class="flex gap-2 justify-end">
+      <button id="closeFlyerModalBtn" class="px-4 py-2 border border-outline-variant/20 rounded-lg text-on-surface-variant hover:bg-surface-container text-sm transition-colors">Cerrar</button>
+      <button id="downloadFlyerBtn" class="flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm transition-colors">
+        <span class="material-symbols-outlined text-[18px]">download</span> Descargar PNG
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden offscreen container for flyer rendering -->
+<div id="flyerCanvasWrap" style="position:fixed;left:-9999px;top:0;z-index:-1;"></div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script src="/frontend/app.js"></script>
+<script src="/frontend/carga.js"></script>
+</body>
+</html>
+

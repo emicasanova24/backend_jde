@@ -5,18 +5,18 @@
  */
 
 require_once __DIR__ . '/src/Database.php';
-require_once __DIR__ . '/src/Season.php';
 require_once __DIR__ . '/src/Jwt.php';
 require_once __DIR__ . '/src/Router.php';
 require_once __DIR__ . '/src/routes/auth.php';
-require_once __DIR__ . '/src/routes/temporadas.php';
-require_once __DIR__ . '/src/routes/noticias.php';
 require_once __DIR__ . '/src/routes/equipos.php';
 require_once __DIR__ . '/src/routes/jugadores.php';
 require_once __DIR__ . '/src/routes/partidos.php';
 require_once __DIR__ . '/src/routes/eventos.php';
 require_once __DIR__ . '/src/routes/tablas.php';
 require_once __DIR__ . '/src/routes/semanario.php';
+require_once __DIR__ . '/src/routes/upload.php';
+require_once __DIR__ . '/src/routes/noticias.php';
+require_once __DIR__ . '/src/routes/temporadas.php';
 require_once __DIR__ . '/src/seed.php';
 require_once __DIR__ . '/src/middleware/auth.php';
 
@@ -31,7 +31,7 @@ use function App\Middleware\authMiddleware;
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Auth-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -42,14 +42,15 @@ $router = new Router();
 
 // Registrar rutas de cada módulo
 App\Routes\registerAuthRoutes($router);
-App\Routes\registerTemporadasRoutes($router);
-App\Routes\registerNoticiasRoutes($router);
 App\Routes\registerEquiposRoutes($router);
 App\Routes\registerJugadoresRoutes($router);
 App\Routes\registerPartidosRoutes($router);
 App\Routes\registerEventosRoutes($router);
 App\Routes\registerTablasRoutes($router);
 App\Routes\registerSemanarioRoutes($router);
+App\Routes\registerUploadRoutes($router);
+App\Routes\registerNoticiasRoutes($router);
+App\Routes\registerTemporadasRoutes($router);
 
 // Seed DB
 $router->post('/setup/seed', function (Request $req, Response $res) {
@@ -69,13 +70,10 @@ $router->post('/setup/clear', function (Request $req, Response $res) {
     return authMiddleware($req, $res);
 }, function (Request $req, Response $res) {
     try {
-        Database::execute("DELETE FROM noticias_relacionadas");
-        Database::execute("DELETE FROM noticias");
         Database::execute("DELETE FROM eventos");
         Database::execute("DELETE FROM partidos");
         Database::execute("DELETE FROM jugadores");
         Database::execute("DELETE FROM equipos");
-        Database::resetAutoIncrement('noticias');
         Database::resetAutoIncrement('eventos');
         Database::resetAutoIncrement('partidos');
         Database::resetAutoIncrement('jugadores');

@@ -41,7 +41,7 @@ const teams = [
       for (const jugador of team.players) {
         await db.query(
           'INSERT INTO jugadores (nombre, posicion, equipo, goles, amarillas, rojas) VALUES ($1, $2, $3, 0, 0, 0)',
-          [jugador, 'No asignada', equipoId]
+          [jugador, 'PEND', equipoId]
         );
       }
       console.log(`Insertados ${team.players.length} jugadores en ${team.name}`);

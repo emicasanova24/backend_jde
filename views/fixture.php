@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fixture — Juego de Equipo</title>
+  <?php require $root . '/views/partials/favicon-links.php'; ?>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script src="/frontend/tailwind-config.js"></script>
+  <style>
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body">
+<div id="sharedLayout" class="flex min-h-screen flex-col">
+  <main class="flex-1 overflow-y-auto p-4 md:p-8">
+    <div class="max-w-[1600px] mx-auto">
+      <h1 class="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-5 font-headline">Fixture Automático Apertura</h1>
+      <div class="flex flex-col sm:flex-row gap-2 mb-4">
+        <button id="generarFixture" class="bg-primary text-on-primary rounded-lg px-4 py-2 text-sm font-semibold hover:bg-primary-dim transition-colors">Generar fixture todos contra todos</button>
+        <button id="saveFixture" class="bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-emerald-700 transition-colors">Guardar fixture en backend</button>
+      </div>
+      <div id="fixtureFechas" class="space-y-6"></div>
+    </div>
+  </main>
+</div>
+<script src="/frontend/app.js"></script>
+</body>
+</html>

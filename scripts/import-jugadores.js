@@ -43,7 +43,7 @@ async function run() {
       continue;
     }
     for (const jugador of team.players) {
-      const body = { nombre: jugador, posicion: 'No asignada', equipo: equipoId };
+      const body = { nombre: jugador, posicion: 'PEND', equipo: equipoId };
       const res = await fetch(`${API_BASE}/jugadores`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
       });

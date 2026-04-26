@@ -8,22 +8,22 @@ require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") }
 const db = require("../src/db/postgres");
 
 const logoMap = {
-  "Cecil A. Roberts": "/logos/roberts.png",
-  "Unión Deportiva": "/logos/uniontl.png",
-  "Unión de Bonifacio": "/logos/bonifacio.png",
-  "Deportivo Garré": "/logos/garre.png",
-  "Deportivo Maza": "/logos/maza.png",
-  "Deportivo Argentino": "/logos/deportivoarg.png",
-  "Atlético Quenumá": "/logos/quenuma.png",
-  "Atlético Argentino": "/logos/argentinos.png",
-  "Salazar FC": "/logos/salazar.png",
-  "Jorge Newbery": "/logos/newbery.png",
-  "El Ceibo": "/logos/ceibo.png",
-  "La Gloria": "/logos/lagloria.png",
-  "Deportivo 17": "/logos/17.png",
-  "Juventud Unida": "/logos/juventud.png",
-  "Ferro": "/logos/ferro.png",
-  "Villa del Parque": "/logos/villa.png",
+  "Cecil A. Roberts": "/assets-equipos/logos/roberts.png",
+  "Unión Deportiva": "/assets-equipos/logos/uniontl.png",
+  "Unión de Bonifacio": "/assets-equipos/logos/bonifacio.png",
+  "Deportivo Garré": "/assets-equipos/logos/garre.png",
+  "Deportivo Maza": "/assets-equipos/logos/maza.png",
+  "Deportivo Argentino": "/assets-equipos/logos/deportivoarg.png",
+  "Atlético Quenumá": "/assets-equipos/logos/quenuma.png",
+  "Atlético Argentino": "/assets-equipos/logos/argentinos.png",
+  "Salazar FC": "/assets-equipos/logos/salazar.png",
+  "Jorge Newbery": "/assets-equipos/logos/newbery.png",
+  "El Ceibo": "/assets-equipos/logos/ceibo.png",
+  "La Gloria": "/assets-equipos/logos/lagloria.png",
+  "Deportivo 17": "/assets-equipos/logos/17.png",
+  "Juventud Unida": "/assets-equipos/logos/juventud.png",
+  "Ferro": "/assets-equipos/logos/ferro.png",
+  "Villa del Parque": "/assets-equipos/logos/villa.png",
 };
 
 async function run() {

@@ -92,6 +92,13 @@ class Request {
                 $headers[$name] = $value;
             }
         }
+        // Apache CGI/FPM: el header Authorization se pierde; recuperarlo desde REDIRECT_HTTP_AUTHORIZATION
+        if (!isset($headers['authorization'])) {
+            $fallback = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+            if ($fallback) {
+                $headers['authorization'] = $fallback;
+            }
+        }
         return $headers;
     }
 

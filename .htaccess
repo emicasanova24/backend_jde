@@ -1,21 +1,20 @@
+#AddHandler x-httpd-php7-2 .php
+DirectorySlash Off
 RewriteEngine On
 
-# Si el request es para la API
-RewriteCond %{REQUEST_URI} ^/api/
-RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+# Pasar header Authorization a PHP (Apache CGI/FPM lo elimina por defecto)
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-# Si el archivo o directorio existe (estáticos: frontend, assets, logos, sponsors)
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
+# Rutas web limpias -> index.php, aunque coincidan con directorios físicos como /equipos
+RewriteCond %{REQUEST_URI} ^/(login|dashboard|equipos|jugadores|partidos|carga|account|estadisticas|fixture|sidebar|temporadas|noticias-admin|embed/tabla|embed/generador)/?$
+RewriteRule ^ index.php [QSA,L]
 
-# Assets estáticos
-RewriteRule ^assets/(.*)$ assets/$1 [L]
-RewriteRule ^logos/(.*)$ equipos/logos/$1 [L]
-RewriteRule ^sponsors/(.*)$ sponsors/$1 [L]
+# Redirect trailing slash a URL limpia
+RewriteCond %{REQUEST_URI} !^/$
+RewriteCond %{REQUEST_URI} (.+)/$
+RewriteRule ^ %1 [R=301,L]
 
-# Raiz del sitio al index del frontend
-RewriteRule ^$ frontend/index.html [L]
-
-# Todo lo demás al frontend
-RewriteRule ^(.*)$ frontend/$1 [L]
+# Todo lo demás que no sea archivo ni directorio → index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]

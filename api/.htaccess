@@ -1,5 +1,8 @@
 RewriteEngine On
 
+# Pasar header Authorization a PHP (Apache CGI/FPM lo elimina por defecto)
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # Todo pasa a index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

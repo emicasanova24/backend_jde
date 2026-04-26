@@ -164,7 +164,7 @@ async function main() {
         const createdName = toSurnameFirst(s.name);
         const inserted = await db.query(
           `INSERT INTO jugadores (nombre, posicion, equipo, goles, amarillas, rojas)
-           VALUES ($1, 'No asignada', $2, $3, 0, 0)
+           VALUES ($1, 'PEND', $2, $3, 0, 0)
            RETURNING id`,
           [createdName, teamIdRow.id, s.goals]
         );

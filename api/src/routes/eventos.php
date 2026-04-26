@@ -7,10 +7,8 @@ use App\Request;
 use App\Response;
 
 use function App\Middleware\authMiddleware;
-use function App\resolveSeasonId;
 
 require_once __DIR__ . '/../middleware/auth.php';
-require_once __DIR__ . '/../Season.php';
 
 function registerEventosRoutes(Router $router): void {
     $router->group('/eventos', function (Router $r) {
@@ -23,12 +21,9 @@ function registerEventosRoutes(Router $router): void {
                 if (!empty($req->query['partido_id'])) {
                     $params[] = (int)$req->query['partido_id'];
                     $where = ' WHERE ev.partido_id = ?';
-                } elseif (!empty($req->query['temporada'])) {
-                    $params[] = resolveSeasonId($req->query['temporada']);
-                    $where = ' WHERE ev.temporada_id = ?';
                 }
                 $rows = Database::fetchAll(
-                    "SELECT ev.id, ev.partido_id, ev.jugador_id, ev.equipo_id, ev.temporada_id AS temporadaId, ev.tipo, ev.minuto,
+                    "SELECT ev.id, ev.partido_id, ev.jugador_id, ev.equipo_id, ev.tipo, ev.minuto,
                             j.nombre AS jugador_nombre, e.nombre AS equipo_nombre
                      FROM eventos ev
                      LEFT JOIN jugadores j ON ev.jugador_id = j.id
@@ -63,11 +58,10 @@ function registerEventosRoutes(Router $router): void {
                         $db->rollBack();
                         return $res->status(400)->json(['error' => 'Cada evento requiere partido_id y tipo']);
                     }
-                    $seasonRow = Database::fetchOne('SELECT temporada_id FROM partidos WHERE id = ?', [(int) $partidoId]);
                     Database::execute(
-                        "INSERT INTO eventos (partido_id, jugador_id, equipo_id, temporada_id, tipo, minuto)
-                         VALUES (?, ?, ?, ?, ?, ?)",
-                        [$partidoId, $ev['jugador_id'] ?? null, $ev['equipo_id'] ?? null, (int) ($seasonRow['temporada_id'] ?? resolveSeasonId(null)), $tipo, $ev['minuto'] ?? null]
+                        "INSERT INTO eventos (partido_id, jugador_id, equipo_id, tipo, minuto)
+                         VALUES (?, ?, ?, ?, ?)",
+                        [$partidoId, $ev['jugador_id'] ?? null, $ev['equipo_id'] ?? null, $tipo, $ev['minuto'] ?? null]
                     );
                     $created[] = fetchEventoById(Database::lastInsertId());
                 }
@@ -90,11 +84,10 @@ function registerEventosRoutes(Router $router): void {
                 return $res->status(400)->json(['error' => 'partido_id y tipo son requeridos']);
             }
             try {
-                $seasonRow = Database::fetchOne('SELECT temporada_id FROM partidos WHERE id = ?', [(int) $partidoId]);
                 Database::execute(
-                    "INSERT INTO eventos (partido_id, jugador_id, equipo_id, temporada_id, tipo, minuto)
-                     VALUES (?, ?, ?, ?, ?, ?)",
-                    [$partidoId, $req->body['jugador_id'] ?? null, $req->body['equipo_id'] ?? null, (int) ($seasonRow['temporada_id'] ?? resolveSeasonId(null)), $tipo, $req->body['minuto'] ?? null]
+                    "INSERT INTO eventos (partido_id, jugador_id, equipo_id, tipo, minuto)
+                     VALUES (?, ?, ?, ?, ?)",
+                    [$partidoId, $req->body['jugador_id'] ?? null, $req->body['equipo_id'] ?? null, $tipo, $req->body['minuto'] ?? null]
                 );
                 $row = fetchEventoById(Database::lastInsertId());
                 $res->status(201)->json($row);
@@ -137,7 +130,7 @@ function registerEventosRoutes(Router $router): void {
 
 function fetchEventoById(int $id): array|false {
     return Database::fetchOne(
-        "SELECT id, partido_id, jugador_id, equipo_id, temporada_id AS temporadaId, tipo, minuto FROM eventos WHERE id = ?",
+        "SELECT id, partido_id, jugador_id, equipo_id, tipo, minuto FROM eventos WHERE id = ?",
         [$id]
     );
 }

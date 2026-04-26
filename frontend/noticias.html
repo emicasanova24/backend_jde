@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Noticias — Juego de Equipo</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script src="tailwind-config.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"/>
+  <style>
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+    /* Editor enriquecido */
+    #richEditor {
+      min-height: 180px;
+      outline: none;
+      line-height: 1.6;
+    }
+    #richEditor p { margin-bottom: 0.5rem; }
+    #richEditor ul, #richEditor ol { padding-left: 1.5rem; margin-bottom: 0.5rem; }
+    #richEditor a { color: #8c52ff; text-decoration: underline; }
+
+    /* Drag-and-drop zona */
+    #dropZone.drag-over {
+      border-color: #8c52ff;
+      background: rgba(140, 82, 255, 0.08);
+    }
+
+    /* Cropper overrides */
+    .cropper-view-box, .cropper-face { border-radius: 0; }
+    #cropModal img { max-height: 60vh; display: block; }
+
+    /* Badge de estado */
+    .badge-publicada  { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .badge-borrador   { background: rgba(234,179,8,0.15);  color: #facc15; }
+    .badge-archivada  { background: rgba(107,114,128,0.15); color: #9ca3af; }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body">
+<div id="sharedLayout" class="flex min-h-screen flex-col">
+  <main class="flex-1 overflow-y-auto p-4 md:p-8">
+    <div class="max-w-[1400px] mx-auto">
+
+      <!-- Encabezado -->
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl md:text-3xl font-bold font-headline">Gestión de Noticias</h1>
+        <button id="btnNueva" class="flex items-center gap-2 bg-primary text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:bg-primary/90 transition-colors">
+          <span class="material-symbols-outlined text-[18px]">add</span>
+          Nueva noticia
+        </button>
+      </div>
+
+      <!-- Filtros -->
+      <div class="flex flex-wrap gap-3 mb-6">
+        <select id="filtroEstado" class="bg-surface-container border border-outline-variant/20 rounded-xl px-3 py-2 text-sm text-on-surface focus:ring-2 focus:ring-primary">
+          <option value="">Todos los estados</option>
+          <option value="publicada">Publicadas</option>
+          <option value="borrador">Borradores</option>
+          <option value="archivada">Archivadas</option>
+        </select>
+        <select id="filtroCategoria" class="bg-surface-container border border-outline-variant/20 rounded-xl px-3 py-2 text-sm text-on-surface focus:ring-2 focus:ring-primary">
+          <option value="">Todas las categorías</option>
+          <option value="Crónica">Crónica</option>
+          <option value="Análisis">Análisis</option>
+          <option value="Institucional">Institucional</option>
+          <option value="Planteles">Planteles</option>
+          <option value="Editorial">Editorial</option>
+        </select>
+      </div>
+
+      <!-- Lista de noticias -->
+      <div id="noticiasGrid" class="space-y-3"></div>
+      <p id="noticiasEmpty" class="hidden text-center text-on-surface-variant py-16 text-sm">No hay noticias para mostrar.</p>
+      <p id="noticiasLoading" class="text-center text-on-surface-variant py-16 text-sm">Cargando…</p>
+
+    </div>
+  </main>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL CREAR / EDITAR NOTICIA -->
+<!-- ============================================================ -->
+<div id="noticiaModal" class="hidden fixed inset-0 bg-black/60 flex items-start justify-center p-4 z-50 overflow-y-auto">
+  <div class="bg-surface-container-high border border-outline-variant/10 rounded-2xl w-full max-w-3xl my-6 shadow-2xl">
+
+    <!-- Header modal -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/20">
+      <h2 id="modalTitle" class="text-xl font-bold font-headline">Nueva noticia</h2>
+      <button id="btnCerrarModal" class="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <!-- Cuerpo del modal -->
+    <form id="noticiaForm" class="px-6 py-5 space-y-5">
+      <input type="hidden" id="noticiaId"/>
+
+      <!-- Título y slug -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Título <span class="text-on-surface-variant/50 font-normal">(requerido para publicar)</span></label>
+          <input id="nTitulo" type="text" placeholder="Título de la noticia"
+            class="w-full bg-surface-container border border-outline-variant/20 rounded-xl px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary focus:border-transparent"/>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Slug</label>
+          <input id="nSlug" type="text" placeholder="url-de-la-noticia"
+            class="w-full bg-surface-container border border-outline-variant/20 rounded-xl px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant font-mono focus:ring-2 focus:ring-primary focus:border-transparent"/>
+        </div>
+      </div>
+
+      <!-- Copete -->
+      <div>
+        <label class="block text-xs font-semibold text-on-surface-variant mb-1">Copete / bajada <span class="text-on-surface-variant/50 font-normal">(requerido para publicar)</span></label>
+        <textarea id="nCopete" rows="2" placeholder="Resumen breve que aparece en la lista"
+          class="w-full bg-surface-container border border-outline-variant/20 rounded-xl px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary focus:border-transparent resize-none"></textarea>
+      </div>
+
+      <!-- Editor de contenido enriquecido -->
+      <div>
+        <label class="block text-xs font-semibold text-on-surface-variant mb-1">Contenido *</label>
+        <!-- Barra de herramientas -->
+        <div class="flex flex-wrap gap-1 mb-1 p-1.5 bg-surface-container rounded-t-xl border border-b-0 border-outline-variant/20">
+          <button type="button" data-cmd="bold"          title="Negrita"   class="editor-btn h-7 w-7 flex items-center justify-center rounded hover:bg-surface-container-high text-xs font-bold">B</button>
+          <button type="button" data-cmd="italic"        title="Itálica"   class="editor-btn h-7 w-7 flex items-center justify-center rounded hover:bg-surface-container-high text-xs italic">I</button>
+          <button type="button" data-cmd="underline"     title="Subrayado" class="editor-btn h-7 w-7 flex items-center justify-center rounded hover:bg-surface-container-high text-xs underline">U</button>
+          <div class="w-px bg-outline-variant/30 mx-1"></div>
+          <button type="button" data-cmd="insertUnorderedList" title="Lista"      class="editor-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs">• Lista</button>
+          <button type="button" data-cmd="insertOrderedList"   title="Numerada"  class="editor-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs">1. Lista</button>
+          <div class="w-px bg-outline-variant/30 mx-1"></div>
+          <button type="button" id="btnLink" title="Insertar link" class="editor-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs">🔗 Link</button>
+          <button type="button" data-cmd="removeFormat" title="Limpiar formato" class="editor-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs text-on-surface-variant">✕ Formato</button>
+        </div>
+        <div id="richEditor" contenteditable="true"
+          class="w-full bg-surface-container border border-outline-variant/20 rounded-b-xl px-3 py-2.5 text-sm text-on-surface"
+          data-placeholder="Escribí el contenido completo de la noticia…"></div>
+      </div>
+
+      <!-- Imagen -->
+      <div>
+        <label class="block text-xs font-semibold text-on-surface-variant mb-1">Imagen destacada</label>
+        <div id="dropZone" class="relative border-2 border-dashed border-outline-variant/40 rounded-xl p-4 text-center cursor-pointer hover:border-primary/50 transition-colors">
+          <input id="imgFileInput" type="file" accept="image/png,image/jpeg,image/jpg" class="hidden"/>
+          <div id="dropPlaceholder">
+            <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-2 block">image</span>
+            <p class="text-sm text-on-surface-variant">Arrastrá una imagen o <span class="text-primary font-semibold cursor-pointer" id="dropClickLabel">hacé clic</span></p>
+            <p class="text-xs text-on-surface-variant/60 mt-1">PNG, JPG, JPEG — máx 5 MB</p>
+          </div>
+          <div id="imgPreviewWrap" class="hidden">
+            <img id="imgPreview" class="max-h-48 mx-auto rounded-lg object-cover"/>
+            <button type="button" id="btnRemoveImg" class="mt-2 text-xs text-error hover:underline">Quitar imagen</button>
+          </div>
+          <div id="imgUploading" class="hidden items-center justify-center gap-2 text-sm text-on-surface-variant">
+            <span class="animate-spin material-symbols-outlined text-primary">progress_activity</span>
+            Subiendo imagen…
+          </div>
+        </div>
+        <input id="nImagenUrl" type="hidden"/>
+        <div class="mt-2">
+          <input id="nImagenAlt" type="text" placeholder="Descripción alternativa de la imagen (alt)"
+            class="w-full bg-surface-container border border-outline-variant/20 rounded-xl px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary"/>
+        </div>
+      </div>
+
+      <!-- Meta: tag, categoría, autor -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Tag</label>
+          <input id="nTag" type="text" placeholder="ej. Apertura"
+            class="w-full bg-surface-container border border-outline-variant/20 rounded-xl px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary"/>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Categoría</label>
+          <select id="nCategoria"
+            class="w-full bg-surface-container border border-outline-variant/20 rounded-xl px-3 py-2.5 text-sm text-on-surface focus:ring-2 focus:ring-primary">
+            <option value="">— Seleccioná —</option>
+            <option value="Crónica">Crónica</option>
+            <option value="Análisis">Análisis</option>
+            <option value="Institucional">Institucional</option>
+            <option value="Planteles">Planteles</option>
+            <option value="Editorial">Editorial</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Autor</label>
+          <input id="nAutor" type="text" placeholder="Redacción Juego de Equipo"
+            class="w-full bg-surface-container border border-outline-variant/20 rounded-xl px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary"/>
+        </div>
+      </div>
+
+      <!-- Estado, destacada, orden, fecha -->
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Estado</label>
+          <select id="nEstado" class="w-full bg-surface-container border border-outline-variant/20 rounded-xl px-3 py-2.5 text-sm text-on-surface focus:ring-2 focus:ring-primary">
+            <option value="borrador">Borrador</option>
+            <option value="publicada">Publicada</option>
+            <option value="archivada">Archivada</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Orden en home</label>
+          <input id="nOrden" type="number" value="999" min="1"
+            class="w-full bg-surface-container border border-outline-variant/20 rounded-xl px-3 py-2.5 text-sm text-on-surface focus:ring-2 focus:ring-primary"/>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Fecha publicación</label>
+          <input id="nPublishedAt" type="datetime-local"
+            class="w-full bg-surface-container border border-outline-variant/20 rounded-xl px-3 py-2.5 text-sm text-on-surface focus:ring-2 focus:ring-primary"/>
+        </div>
+        <div class="flex items-center gap-2 pb-1">
+          <input id="nDestacada" type="checkbox" class="h-4 w-4 rounded border-outline-variant/40 bg-surface-container text-primary focus:ring-primary"/>
+          <label for="nDestacada" class="text-sm font-semibold">Destacada</label>
+        </div>
+      </div>
+
+      <!-- Acciones del modal -->
+      <div class="flex items-center justify-between pt-2 border-t border-outline-variant/20 mt-4">
+        <button type="button" id="btnEliminarNoticia" class="hidden text-sm font-semibold text-error hover:underline">
+          Eliminar noticia
+        </button>
+        <div class="flex gap-3 ml-auto">
+          <button type="button" id="btnCancelarModal" class="px-4 py-2.5 rounded-xl border border-outline-variant/30 text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" id="btnGuardar" class="px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+            Guardar
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal de recorte de imagen -->
+<div id="cropModal" class="fixed inset-0 z-[150] hidden items-center justify-center bg-black/85 p-4">
+  <div class="bg-surface rounded-2xl p-5 max-w-2xl w-full flex flex-col gap-4 shadow-2xl">
+    <div class="flex items-center justify-between">
+      <h3 class="font-bold text-base font-headline">Recortar imagen</h3>
+      <button type="button" id="btnCancelCropX" class="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-surface-container transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="overflow-hidden rounded-xl bg-black flex items-center justify-center" style="max-height:60vh">
+      <img id="cropPreview" src="" alt="Recortar"/>
+    </div>
+    <div class="flex items-center justify-between">
+      <p class="text-xs text-on-surface-variant">Arrastrá para mover · Usá las esquinas para redimensionar</p>
+      <div class="flex gap-3">
+        <button type="button" id="btnCancelCrop" class="px-4 py-2.5 rounded-xl border border-outline-variant/30 text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-colors">
+          Cancelar
+        </button>
+        <button type="button" id="btnConfirmCrop" class="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+          Recortar y subir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast de notificación -->
+<div id="toast" class="fixed bottom-6 right-6 z-[100] hidden items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold shadow-lg backdrop-blur-md transition-all">
+  <span id="toastIcon" class="material-symbols-outlined text-[20px]"></span>
+  <span id="toastMsg"></span>
+</div>
+
+<script src="app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script>
+// ─── Constantes y estado ─────────────────────────────────────────────────────
+const BASE = '/api';
+let editingId = null;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function token() { return localStorage.getItem('jde_token') || ''; }
+
+async function apiFetch(method, path, body = null, isFormData = false) {
+  const opts = {
+    method,
+    headers: { 'Authorization': 'Bearer ' + token() },
+  };
+  if (body && !isFormData) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  } else if (body && isFormData) {
+    opts.body = body; // FormData — sin Content-Type para que el browser lo setee
+  }
+  const r = await fetch(BASE + path, opts);
+  const json = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(json.error || json.message || `HTTP ${r.status}`);
+  return json;
+}
+
+function showToast(msg, ok = true) {
+  const t = document.getElementById('toast');
+  const icon = document.getElementById('toastIcon');
+  const txt  = document.getElementById('toastMsg');
+  t.className = `fixed bottom-6 right-6 z-[100] flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold shadow-lg backdrop-blur-md transition-all ${ok ? 'bg-surface-container border-green-500/30 text-green-400' : 'bg-surface-container border-red-500/30 text-red-400'}`;
+  icon.textContent = ok ? 'check_circle' : 'error';
+  txt.textContent = msg;
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 3500);
+}
+
+function slugify(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim()
+    .replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+}
+
+function fmtEstado(e) {
+  const classes = { publicada: 'badge-publicada', borrador: 'badge-borrador', archivada: 'badge-archivada' };
+  return `<span class="px-2 py-0.5 rounded-full text-xs font-semibold ${classes[e] || ''}">${e}</span>`;
+}
+
+// ─── Cargar lista de noticias ────────────────────────────────────────────────
+async function loadNoticias() {
+  const grid    = document.getElementById('noticiasGrid');
+  const empty   = document.getElementById('noticiasEmpty');
+  const loading = document.getElementById('noticiasLoading');
+  grid.innerHTML = '';
+  loading.classList.remove('hidden');
+  empty.classList.add('hidden');
+
+  const estado    = document.getElementById('filtroEstado').value;
+  const categoria = document.getElementById('filtroCategoria').value;
+  let qs = '?limit=100&admin=1';
+  if (estado)    qs += '&estado=' + encodeURIComponent(estado);
+  if (categoria) qs += '&categoria=' + encodeURIComponent(categoria);
+
+  try {
+    const items = await apiFetch('GET', '/noticias' + qs);
+    loading.classList.add('hidden');
+    if (!items.length) { empty.classList.remove('hidden'); return; }
+
+    for (const n of items) {
+      const card = document.createElement('div');
+      card.className = 'flex items-start gap-4 bg-surface-container-high border border-outline-variant/10 rounded-xl p-4 hover:border-outline-variant/30 transition-colors';
+      const thumb = n.imagenUrl
+        ? `<img src="${n.imagenUrl}" alt="${n.imagenAlt || ''}" class="h-16 w-24 rounded-lg object-cover flex-shrink-0"/>`
+        : `<div class="h-16 w-24 rounded-lg bg-surface-container flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-on-surface-variant">image</span></div>`;
+      const fecha = n.publishedAt ? new Date(n.publishedAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+      card.innerHTML = `
+        ${thumb}
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            ${fmtEstado(n.estado)}
+            ${n.destacada ? '<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-500/15 text-yellow-400">⭐ Destacada</span>' : ''}
+            <span class="text-xs text-on-surface-variant">${fecha}</span>
+            ${n.categoria ? `<span class="text-xs text-on-surface-variant">· ${n.categoria}</span>` : ''}
+          </div>
+          <h3 class="font-semibold text-sm leading-snug truncate">${n.titulo}</h3>
+          <p class="text-xs text-on-surface-variant mt-1 line-clamp-2">${n.copete || ''}</p>
+        </div>
+        <button data-id="${n.id}" class="btn-editar flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-xl hover:bg-surface-container border border-outline-variant/20 transition-colors">
+          <span class="material-symbols-outlined text-[18px]">edit</span>
+        </button>`;
+      grid.appendChild(card);
+    }
+
+    grid.querySelectorAll('.btn-editar').forEach(btn => {
+      btn.addEventListener('click', () => openModal(Number(btn.dataset.id)));
+    });
+  } catch (e) {
+    loading.classList.add('hidden');
+    showToast('Error al cargar noticias: ' + e.message, false);
+  }
+}
+
+// ─── Modal ───────────────────────────────────────────────────────────────────
+function openModal(id = null) {
+  editingId = id;
+  const modal = document.getElementById('noticiaModal');
+  document.getElementById('modalTitle').textContent = id ? 'Editar noticia' : 'Nueva noticia';
+  document.getElementById('noticiaForm').reset();
+  document.getElementById('richEditor').innerHTML = '';
+  document.getElementById('nImagenUrl').value = '';
+  document.getElementById('nAutor').value = 'Redacción Juego de Equipo';
+  document.getElementById('nOrden').value = '999';
+  resetImgPreview();
+
+  const btnEliminar = document.getElementById('btnEliminarNoticia');
+  btnEliminar.classList.toggle('hidden', !id);
+
+  if (id) {
+    apiFetch('GET', '/noticias/' + id).then(n => {
+      document.getElementById('nTitulo').value       = n.titulo || '';
+      document.getElementById('nSlug').value         = n.slug || '';
+      document.getElementById('nCopete').value       = n.copete || '';
+      document.getElementById('richEditor').innerHTML = n.contenido || '';
+      document.getElementById('nImagenUrl').value    = n.imagenUrl || '';
+      document.getElementById('nImagenAlt').value    = n.imagenAlt || '';
+      document.getElementById('nTag').value          = n.tag || '';
+      document.getElementById('nCategoria').value    = n.categoria || '';
+      document.getElementById('nAutor').value        = n.autorNombre || 'Redacción Juego de Equipo';
+      document.getElementById('nEstado').value       = n.estado || 'borrador';
+      document.getElementById('nOrden').value        = n.ordenHome ?? 999;
+      document.getElementById('nDestacada').checked  = !!n.destacada;
+      if (n.publishedAt) {
+        document.getElementById('nPublishedAt').value = n.publishedAt.replace(' ', 'T').substring(0, 16);
+      }
+      if (n.imagenUrl) {
+        document.getElementById('imgPreview').src = n.imagenUrl;
+        document.getElementById('imgPreviewWrap').classList.remove('hidden');
+        document.getElementById('dropPlaceholder').classList.add('hidden');
+      }
+    }).catch(e => showToast('Error al cargar la noticia: ' + e.message, false));
+  }
+
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('noticiaModal').classList.add('hidden');
+  document.body.style.overflow = '';
+  editingId = null;
+}
+
+function resetImgPreview() {
+  document.getElementById('imgPreview').src = '';
+  document.getElementById('imgPreviewWrap').classList.add('hidden');
+  document.getElementById('dropPlaceholder').classList.remove('hidden');
+  document.getElementById('imgUploading').classList.add('hidden');
+}
+
+// ─── Submit del formulario ───────────────────────────────────────────────────
+document.getElementById('noticiaForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('btnGuardar');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+
+  try {
+    const estado = document.getElementById('nEstado').value;
+    const contenido = document.getElementById('richEditor').innerHTML.trim();
+    if (estado !== 'borrador' && (!document.getElementById('nTitulo').value.trim() || !document.getElementById('nCopete').value.trim() || !contenido)) {
+      throw new Error('Título, copete y contenido son obligatorios para publicar');
+    }
+
+    const publishedAt = document.getElementById('nPublishedAt').value;
+    const payload = {
+      titulo:      document.getElementById('nTitulo').value.trim(),
+      slug:        document.getElementById('nSlug').value.trim(),
+      copete:      document.getElementById('nCopete').value.trim(),
+      contenido,
+      imagenUrl:   document.getElementById('nImagenUrl').value || null,
+      imagenAlt:   document.getElementById('nImagenAlt').value.trim() || null,
+      tag:         document.getElementById('nTag').value.trim() || null,
+      categoria:   document.getElementById('nCategoria').value,
+      autorNombre: document.getElementById('nAutor').value.trim() || 'Redacción Juego de Equipo',
+      estado,      // ya leído arriba
+      destacada:   document.getElementById('nDestacada').checked ? 1 : 0,
+      ordenHome:   Number(document.getElementById('nOrden').value) || 999,
+      publishedAt: publishedAt ? publishedAt.replace('T', ' ') + ':00' : null,
+      temporadaId: 2,
+    };
+
+    if (editingId) {
+      await apiFetch('PUT', '/noticias/' + editingId, payload);
+      showToast('Noticia actualizada');
+    } else {
+      await apiFetch('POST', '/noticias', payload);
+      showToast('Noticia creada');
+    }
+    closeModal();
+    loadNoticias();
+  } catch (err) {
+    showToast(err.message, false);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar';
+  }
+});
+
+// ─── Eliminar noticia ─────────────────────────────────────────────────────────
+document.getElementById('btnEliminarNoticia').addEventListener('click', async () => {
+  if (!editingId) return;
+  if (!confirm('¿Eliminar esta noticia? La acción se puede deshacer desde la base de datos.')) return;
+  try {
+    await apiFetch('DELETE', '/noticias/' + editingId);
+    showToast('Noticia eliminada');
+    closeModal();
+    loadNoticias();
+  } catch (e) {
+    showToast('Error al eliminar: ' + e.message, false);
+  }
+});
+
+// ─── Slug automático desde el título ─────────────────────────────────────────
+document.getElementById('nTitulo').addEventListener('input', function () {
+  if (!editingId) {
+    document.getElementById('nSlug').value = slugify(this.value);
+  }
+});
+
+// ─── Editor enriquecido ───────────────────────────────────────────────────────
+document.querySelectorAll('.editor-btn[data-cmd]').forEach(btn => {
+  btn.addEventListener('mousedown', e => {
+    e.preventDefault();
+    document.execCommand(btn.dataset.cmd, false, null);
+    document.getElementById('richEditor').focus();
+  });
+});
+
+document.getElementById('btnLink').addEventListener('mousedown', e => {
+  e.preventDefault();
+  const url = prompt('URL del link:');
+  if (url) document.execCommand('createLink', false, url);
+  document.getElementById('richEditor').focus();
+});
+
+// Placeholder visual para el editor
+const editor = document.getElementById('richEditor');
+editor.addEventListener('focus', () => editor.classList.remove('empty'));
+editor.addEventListener('blur',  () => {
+  editor.classList.toggle('empty', !editor.textContent.trim());
+});
+
+// ─── Crop modal ──────────────────────────────────────────────────────────────
+let cropper = null;
+
+function openCropModal(file) {
+  const reader = new FileReader();
+  reader.onload = evt => {
+    const img = document.getElementById('cropPreview');
+    img.src = evt.target.result;
+    const modal = document.getElementById('cropModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (cropper) { cropper.destroy(); cropper = null; }
+    // Usamos setTimeout para que el img esté visible antes de inicializar
+    setTimeout(() => {
+      cropper = new Cropper(img, {
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 0.9,
+        restore: false,
+        guides: true,
+        center: true,
+        highlight: false,
+        cropBoxResizable: true,
+        toggleDragModeOnDblclick: false,
+      });
+    }, 100);
+  };
+  reader.readAsDataURL(file);
+}
+
+function closeCropModal() {
+  if (cropper) { cropper.destroy(); cropper = null; }
+  const modal = document.getElementById('cropModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  document.getElementById('imgFileInput').value = '';
+}
+
+document.getElementById('btnCancelCropX').addEventListener('click', closeCropModal);
+document.getElementById('btnCancelCrop').addEventListener('click', closeCropModal);
+
+document.getElementById('btnConfirmCrop').addEventListener('click', () => {
+  if (!cropper) return;
+  const btn = document.getElementById('btnConfirmCrop');
+  btn.disabled = true;
+  btn.textContent = 'Subiendo…';
+  cropper.getCroppedCanvas({ maxWidth: 2000, maxHeight: 2000 }).toBlob(async blob => {
+    closeCropModal();
+    await doUploadBlob(blob);
+    btn.disabled = false;
+    btn.textContent = 'Recortar y subir';
+  }, 'image/jpeg', 0.92);
+});
+
+// ─── Upload de imagen ─────────────────────────────────────────────────────────
+function prepareImage(file) {
+  const allowed = ['image/png', 'image/jpeg', 'image/jpg'];
+  if (!allowed.includes(file.type)) {
+    showToast('Solo se permiten PNG, JPG y JPEG', false); return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('La imagen supera 5 MB', false); return;
+  }
+  openCropModal(file);
+}
+
+async function doUploadBlob(blob) {
+  document.getElementById('dropPlaceholder').classList.add('hidden');
+  document.getElementById('imgPreviewWrap').classList.add('hidden');
+  document.getElementById('imgUploading').classList.remove('hidden');
+  document.getElementById('imgUploading').classList.add('flex');
+
+  try {
+    const fd = new FormData();
+    fd.append('image', blob, 'imagen.jpg');
+    const data = await apiFetch('POST', '/uploads/image', fd, true);
+    document.getElementById('nImagenUrl').value = data.url;
+    document.getElementById('imgPreview').src = data.url;
+    document.getElementById('imgPreviewWrap').classList.remove('hidden');
+    showToast('Imagen subida correctamente');
+  } catch (err) {
+    showToast('Error al subir la imagen: ' + err.message, false);
+    resetImgPreview();
+  } finally {
+    document.getElementById('imgUploading').classList.add('hidden');
+    document.getElementById('imgUploading').classList.remove('flex');
+  }
+}
+
+const dropZone  = document.getElementById('dropZone');
+const fileInput = document.getElementById('imgFileInput');
+
+dropZone.addEventListener('click', e => {
+  if (e.target.closest('#btnRemoveImg')) return;
+  fileInput.click();
+});
+document.getElementById('dropClickLabel').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) prepareImage(fileInput.files[0]); });
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) prepareImage(e.dataTransfer.files[0]);
+});
+
+document.getElementById('btnRemoveImg').addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('nImagenUrl').value = '';
+  resetImgPreview();
+});
+
+// ─── Eventos de UI ────────────────────────────────────────────────────────────
+document.getElementById('btnNueva').addEventListener('click', () => openModal());
+document.getElementById('btnCerrarModal').addEventListener('click', closeModal);
+document.getElementById('btnCancelarModal').addEventListener('click', closeModal);
+document.getElementById('noticiaModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+document.getElementById('filtroEstado').addEventListener('change', loadNoticias);
+document.getElementById('filtroCategoria').addEventListener('change', loadNoticias);
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadNoticias();
+</script>
+</body>
+</html>
