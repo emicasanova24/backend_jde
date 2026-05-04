@@ -51,6 +51,7 @@ body { font-family: "Public Sans", sans-serif; }
 </style>
 </head>
 <body class="bg-background-dark text-white antialiased selection:bg-primary selection:text-white">
+<?php require $root . '/views/partials/gtm-body.php'; ?>
 
 <!-- HEADER -->
 <header class="fixed top-0 w-full z-50 bg-background-dark/80 backdrop-blur-md border-b border-white/10">

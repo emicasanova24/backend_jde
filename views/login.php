@@ -14,6 +14,7 @@
   </style>
 </head>
 <body class="font-body bg-surface text-on-surface antialiased">
+<?php require $root . '/views/partials/gtm-body.php'; ?>
   <div class="relative flex min-h-screen w-full flex-col items-center justify-center overflow-x-hidden p-4">
     <div class="absolute inset-0 z-0 overflow-hidden">
       <div class="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-primary/10 blur-[120px]"></div>

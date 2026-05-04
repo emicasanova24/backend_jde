@@ -127,6 +127,7 @@ html { scroll-behavior: smooth; }
 </style>
 </head>
 <body class="bg-background-dark text-white antialiased selection:bg-primary selection:text-white">
+<?php require $root . '/views/partials/gtm-body.php'; ?>
 
 <!-- HEADER -->
 <header class="fixed top-0 w-full z-50 bg-background-dark/80 backdrop-blur-md border-b border-white/10">
@@ -304,6 +305,19 @@ html { scroll-behavior: smooth; }
 </div>
 
 <!-- FIXTURE -->
+<section id="liveScoresSection" class="hidden py-10 sm:py-12 bg-red-950/20 border-y border-red-500/20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center gap-3 mb-6">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-widest live-badge">
+        <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> En vivo ahora
+      </span>
+      <h2 class="text-xl sm:text-2xl font-black uppercase">Marcadores</h2>
+    </div>
+    <div id="liveScoresContainer" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </div>
+</section>
+
+<!-- FIXTURE -->
 <section class="py-12 sm:py-16" id="fixture">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-end justify-between mb-8 sm:mb-10">
@@ -448,7 +462,7 @@ html { scroll-behavior: smooth; }
 <?php $bannerType = 'mobile-banner'; $bannerId = 'home-prefooter-m'; include $root . '/views/partials/banner.php'; ?>
 
 <!-- FOOTER -->
-<footer class="bg-background-dark pt-12 sm:pt-16 pb-8 border-t border-white/5">
+<footer class="bg-background-dark mt-8 pt-12 sm:pt-16 pb-8 border-t border-white/5">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 mb-10 sm:mb-14">
       <div class="sm:col-span-2">

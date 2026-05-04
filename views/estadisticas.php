@@ -16,6 +16,7 @@
   </style>
 </head>
 <body class="bg-surface text-on-surface font-body min-h-screen">
+<?php require $root . '/views/partials/gtm-body.php'; ?>
 <div id="sharedLayout" class="flex min-h-screen flex-col">
   <main class="flex-1 overflow-y-auto p-4 md:p-8">
     <div class="max-w-[1600px] mx-auto">

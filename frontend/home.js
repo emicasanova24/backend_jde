@@ -45,6 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Load everything
   loadLive();
+  loadLiveScores();
+  setInterval(loadLiveScores, 30000);
   loadAll();
   loadNoticias();
 });
@@ -575,6 +577,76 @@ function formatDate(dateStr) {
     return d.toLocaleDateString("es-AR", { day: "numeric", month: "short" });
   } catch {
     return dateStr;
+  }
+}
+
+// === Marcadores en Vivo (polling 30s) ===
+async function loadLiveScores() {
+  const section = document.getElementById("liveScoresSection");
+  const container = document.getElementById("liveScoresContainer");
+  if (!section || !container) return;
+
+  try {
+    const partidos = await api.get("/partidos/live-scores");
+
+    if (!Array.isArray(partidos) || partidos.length === 0) {
+      section.classList.add("hidden");
+      return;
+    }
+
+    section.classList.remove("hidden");
+
+    container.innerHTML = partidos.map((p) => {
+      const localEsc = p.localEscudo ? `<img src="${p.localEscudo}" alt="" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover bg-white/10 shrink-0" onerror="this.style.display='none'"/>` : "";
+      const visitEsc = p.visitanteEscudo ? `<img src="${p.visitanteEscudo}" alt="" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover bg-white/10 shrink-0" onerror="this.style.display='none'"/>` : "";
+
+      const broadcastBtn = p.broadcast
+        ? `<a href="${p.broadcast}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs font-bold text-red-400 hover:text-red-300 transition-colors mt-2">
+            <span class="material-symbols-outlined text-[14px]">live_tv</span> Ver en vivo
+           </a>`
+        : "";
+
+      // Renderizar eventos: gol ⚽, autogol 🔄, amarilla 🟨, roja 🟥
+      const eventoIcons = { gol: "⚽", autogol: "🔄", amarilla: "🟨", roja: "🟥" };
+      const eventosHtml = (p.eventos || []).length
+        ? `<div class="flex flex-wrap gap-x-4 gap-y-1 mt-3 pt-3 border-t border-white/10">
+            ${p.eventos.map((e) => {
+              const icon = eventoIcons[e.tipo] || "•";
+              const min = e.minuto != null ? `${e.minuto}'` : "";
+              const nombre = e.jugador_nombre || "";
+              return `<span class="text-xs text-gray-400">${icon} ${min} ${nombre}</span>`;
+            }).join("")}
+           </div>`
+        : "";
+
+      return `<div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col gap-1">
+        <div class="flex items-center justify-center gap-3 sm:gap-5">
+          <div class="flex items-center gap-2 flex-1 justify-end min-w-0">
+            <span class="font-bold text-sm sm:text-base text-right truncate">${p.local}</span>
+            ${localEsc}
+          </div>
+          <div class="flex flex-col items-center shrink-0">
+            <div class="bg-primary/20 text-primary font-black text-2xl sm:text-3xl px-4 py-1 rounded-xl min-w-[80px] text-center tabular-nums">
+              ${p.golesLocal ?? 0} <span class="text-gray-500">-</span> ${p.golesVisitante ?? 0}
+            </div>
+            <span class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-red-400 uppercase tracking-widest live-badge">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> En vivo
+            </span>
+          </div>
+          <div class="flex items-center gap-2 flex-1 justify-start min-w-0">
+            ${visitEsc}
+            <span class="font-bold text-sm sm:text-base truncate">${p.visitante}</span>
+          </div>
+        </div>
+        ${eventosHtml}
+        <div class="flex items-center justify-between mt-1">
+          <span class="text-xs text-gray-500">${p.categoria || ""} · ${p.torneo || ""}${p.jornada ? ` · Fecha ${p.jornada}` : ""}</span>
+          ${broadcastBtn}
+        </div>
+      </div>`;
+    }).join("");
+  } catch (e) {
+    console.error("Error loading live scores:", e);
   }
 }
 

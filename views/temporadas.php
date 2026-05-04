@@ -12,6 +12,7 @@
   <style>.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }</style>
 </head>
 <body class="bg-surface text-on-surface font-body">
+<?php require $root . '/views/partials/gtm-body.php'; ?>
 <div id="sharedLayout" class="flex min-h-screen flex-col">
   <main class="flex-1 overflow-y-auto p-4 md:p-8">
     <div class="max-w-[1600px] mx-auto space-y-6">

@@ -235,6 +235,76 @@ function registerPartidosRoutes(Router $router): void {
             }
         });
 
+        // Partidos en curso con marcador + eventos — para polling de tiempo real
+        $r->get('/live-scores', function (Request $req, Response $res) {
+            try {
+                $partidos = Database::fetchAll(
+                    "SELECT p.id, p.fecha, p.hora, p.estadio, p.estado, p.broadcast,
+                        p.goleslocal AS golesLocal, p.golesvisitante AS golesVisitante,
+                        p.torneo, p.categoria, p.jornada,
+                        el.nombre AS local, ev.nombre AS visitante,
+                        el.id AS localId, ev.id AS visitanteId,
+                        el.escudo AS localEscudo, ev.escudo AS visitanteEscudo
+                    FROM partidos p
+                    LEFT JOIN equipos el ON p.local = el.id
+                    LEFT JOIN equipos ev ON p.visitante = ev.id
+                    WHERE p.estado = 'en_curso'
+                       OR (
+                            p.fecha = CURDATE()
+                            AND LOWER(p.estado) NOT IN ('jugado', 'postergado')
+                            AND p.hora != '00:00:00'
+                            AND NOW() >= DATE_SUB(CAST(CONCAT(p.fecha, ' ', p.hora) AS DATETIME), INTERVAL 15 MINUTE)
+                            AND NOW() <= DATE_ADD(CAST(CONCAT(p.fecha, ' ', p.hora) AS DATETIME), INTERVAL 3 HOUR)
+                       )
+                    ORDER BY p.hora"
+                );
+
+                if (empty($partidos)) {
+                    return $res->json([]);
+                }
+
+                $ids = array_map(static fn($p) => (int) $p['id'], $partidos);
+                $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+                $eventos = Database::fetchAll(
+                    "SELECT e.partido_id, e.tipo, e.minuto, e.equipo_id,
+                        COALESCE(j.nombre, '') AS jugador_nombre
+                    FROM eventos e
+                    LEFT JOIN jugadores j ON e.jugador_id = j.id
+                    WHERE e.partido_id IN ($placeholders)
+                    ORDER BY e.partido_id, e.minuto ASC, e.id ASC",
+                    $ids
+                );
+
+                // Indexar eventos por partido_id
+                $eventosByPartido = [];
+                foreach ($eventos as $ev) {
+                    $pid = (int) $ev['partido_id'];
+                    if (!isset($eventosByPartido[$pid])) {
+                        $eventosByPartido[$pid] = [];
+                    }
+                    $eventosByPartido[$pid][] = [
+                        'tipo'           => $ev['tipo'],
+                        'minuto'         => $ev['minuto'] !== null ? (int) $ev['minuto'] : null,
+                        'jugador_nombre' => $ev['jugador_nombre'],
+                        'equipo_id'      => (int) $ev['equipo_id'],
+                    ];
+                }
+
+                $result = array_map(static function (array $p) use ($eventosByPartido): array {
+                    $normalized = normalizePartidoRecord($p);
+                    $pid = (int) $p['id'];
+                    $normalized['eventos'] = $eventosByPartido[$pid] ?? [];
+                    return $normalized;
+                }, $partidos);
+
+                $res->json(array_values($result));
+            } catch (\Exception $e) {
+                error_log('Error GET /partidos/live-scores: ' . $e->getMessage());
+                $res->status(500)->json(['error' => 'Error al obtener marcadores en vivo']);
+            }
+        });
+
         $r->get('/proximo', function (Request $req, Response $res) {
             try {
                 $categoria = trim((string) ($req->query['categoria'] ?? ''));

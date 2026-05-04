@@ -55,6 +55,12 @@ unset($bannerClasses);
     <a href="https://api.whatsapp.com/send?phone=5492392517048&text=Hola%20Eduardo!%20Me%20gustar%C3%ADa%20consultarte%20por%20un%20presupuesto." target="_blank" rel="noopener noreferrer">
       <img src="/banners-sponsors/eduardo-banner.gif" alt="Eduardo Banner" width="300" height="250" class="rounded-xl shadow-lg border border-white/10" style="max-width:100%;height:auto;" />
     </a>
+  <?php elseif ($_bid === 'home-prefooter-d'): ?>
+    <a href="https://api.whatsapp.com/send?phone=5492392559254&text=Hola%20Juan!%20Me%20gustar%C3%ADa%20consultarte." target="_blank" rel="noopener noreferrer">
+      <img src="/banners-sponsors/banner-juanoliva.png" alt="Juan Oliva" width="728" height="90" style="max-width:100%;height:auto;border-radius:0.75rem;" />
+    </a>
+  <?php elseif ($_bid === 'home-hero-m'): ?>
+    <img src="/banners-sponsors/banner-el-punto.png" alt="El Punto" width="320" height="100" style="max-width:100%;height:auto;border-radius:0.75rem;" />
   <?php else: ?>
     <div class="banner-slot <?= $_bs['tc'] ?>" style="width:<?= $_bw ?>px;height:<?= $_bh ?>px;max-width:calc(100vw - 2rem)">
       <span class="material-symbols-outlined" style="font-size:22px;opacity:.22;color:inherit">image</span>

@@ -282,6 +282,10 @@ async function loadPartidosJornada(jornada) {
             <span class="material-symbols-outlined text-[16px] align-middle mr-0.5">schedule</span>
             Programar
           </button>
+          ${p.estado === "pendiente" ? `<button data-id="${p.id}" class="btnIniciar flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors bg-amber-500 hover:bg-amber-400 text-black">
+            <span class="material-symbols-outlined text-[16px] align-middle mr-0.5">play_arrow</span>
+            Iniciar
+          </button>` : ""}
           <button data-id="${p.id}" class="btnCargar flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${isJugado ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-primary hover:bg-primary/80 text-white"}">
             <span class="material-symbols-outlined text-[16px] align-middle mr-0.5">${isJugado ? "edit" : "scoreboard"}</span>
             ${isJugado ? "Editar" : "Cargar"}
@@ -293,6 +297,18 @@ async function loadPartidosJornada(jornada) {
       </div>
     `;
     container.appendChild(card);
+  });
+
+  container.querySelectorAll(".btnIniciar").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      try {
+        await api.put(`/partidos/${btn.dataset.id}`, { estado: "en_curso" });
+        showToast("Partido iniciado");
+        await loadPartidosJornada(currentJornada);
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    });
   });
 
   container.querySelectorAll(".btnCargar").forEach((btn) => {
@@ -909,18 +925,23 @@ function buildFlyerHtml(partidos, tabla, meta, format, content) {
   const logoSize = isStory ? 100 : 80;
   const scoreBoxW = isStory ? 180 : 150;
 
-  const tablaLogoSize = isStory ? 28 : 22;
+  const tablaLogoSize = isStory ? 34 : 28;
   const maxTablaRows = isStory ? 20 : 14;
   const tablaRows = (tabla || []).slice(0, maxTablaRows);
 
   // Layout zones (reservando espacio para publicidades en el fondo)
-  const headerH = isStory ? 200 : 160;
-  const footerH = isStory ? 350 : 400; // Espacio de publicidades en el fondo (story: 350px, feed: 400px)
+  const headerH = isStory ? 250 : 210;
+  const footerH = isStory ? 250 : 450; // Espacio de publicidades en el fondo (story: 250px, feed: 450px)
   const contentPadX = isStory ? 40 : 30;
   const contentPadY = isStory ? 20 : 16;
   const titleH = isStory ? 80 : 72;
-  const contentAreaH = H - headerH - footerH - 3 - (contentPadY * 2) - titleH;
-  const contentDivH = H - headerH - footerH - 3;
+  const headerTopOffset = content === "posiciones" ? 40 : 0;
+  // containerPad*2 = espacio de padding arriba+abajo del contenedor principal (30px cada lado)
+  // contentMarginTop = margin-top extra del wrapper de contenido (solo en feed)
+  const containerPad = 30;
+  const contentMarginTop = !isStory ? 30 : 0;
+  const contentAreaH = H - headerH - footerH - 3 - (contentPadY * 2) - titleH - headerTopOffset - containerPad * 2 - contentMarginTop;
+  const contentDivH = H - headerH - footerH - 3 - headerTopOffset - containerPad * 2 - contentMarginTop;
 
   // --- Match rows ---
   const matchCardH = matchPadY * 2 + Math.max(logoSize, scoreFontSize * 1.3) + 2;
@@ -947,7 +968,7 @@ function buildFlyerHtml(partidos, tabla, meta, format, content) {
 
   // --- Tabla ---
   const tablaRowH = tablaRows.length > 0 ? Math.min(Math.floor(contentAreaH / (tablaRows.length + 1.5)), isStory ? 68 : 56) : 40;
-  const tableFontSize = Math.min(isStory ? 22 : 18, Math.floor(tablaRowH * 0.42));
+  const tableFontSize = Math.min(isStory ? 26 : 22, Math.floor(tablaRowH * 0.42));
   const tableHeaderFontSize = Math.floor(tableFontSize * 0.82);
   const ptsFontSize = Math.floor(tableFontSize * 1.1);
 
@@ -994,12 +1015,12 @@ function buildFlyerHtml(partidos, tabla, meta, format, content) {
   // --- Content section ---
   const contentHtml = content === "fixture"
     ? `
-      <div style="height:${contentDivH}px;display:flex;flex-direction:column;justify-content:center;padding:${contentPadY}px ${contentPadX}px;box-sizing:border-box;">
+      <div style="height:${contentDivH}px;display:flex;flex-direction:column;justify-content:flex-start;padding:30px ${contentPadX}px ${contentPadY}px;box-sizing:border-box;">
         ${matchesHtml}
       </div>`
     : content === "resultados"
     ? `
-      <div style="height:${contentDivH}px;display:flex;flex-direction:column;justify-content:center;padding:${contentPadY}px ${contentPadX}px;box-sizing:border-box;">
+      <div style="height:${contentDivH}px;display:flex;flex-direction:column;justify-content:flex-start;padding:${isStory ? 30 : contentPadY}px ${contentPadX}px ${contentPadY}px;box-sizing:border-box;">
         ${matchesHtml}
       </div>`
     : `
@@ -1012,17 +1033,20 @@ function buildFlyerHtml(partidos, tabla, meta, format, content) {
   <div style="width:${W}px;height:${H}px;font-family:'Lexend',sans-serif;color:#fff;display:flex;flex-direction:column;overflow:hidden;position:relative;padding:30px;box-sizing:border-box;">
     <img src="${fondoUrl}" style="position:absolute;top:0;left:0;width:${W}px;height:${H}px;object-fit:cover;z-index:0;" crossorigin="anonymous" />
 
-    <div style="height:${headerH}px;display:flex;align-items:flex-end;justify-content:space-between;padding:${isStory ? 32 : 24}px ${contentPadX}px ${isStory ? 20 : 16}px;flex-shrink:0;position:relative;z-index:1;border-bottom:4px solid #8c52ff;box-sizing:border-box;">
+    <div style="height:${headerH}px;display:flex;align-items:flex-end;justify-content:space-between;padding:${isStory ? 62 : 54}px ${isStory ? 70 : 60}px ${isStory ? 50 : 46}px;flex-shrink:0;position:relative;z-index:1;border-bottom:4px solid #8c52ff;box-sizing:border-box;margin-top:${headerTopOffset}px;">
       <div>
-        <div style="font-size:${isStory ? 22 : 18}px;font-weight:900;color:#8c52ff;text-transform:uppercase;letter-spacing:1px;margin-bottom:${isStory ? 6 : 4}px;">${meta.categoria} · ${meta.torneo}</div>
+        <div style="font-size:${isStory ? 22 : 18}px;font-weight:900;color:#8c52ff;text-transform:uppercase;letter-spacing:1px;margin-bottom:${isStory ? 6 : 4}px;white-space:nowrap;">${meta.categoria} · ${meta.torneo}</div>
         <div style="font-size:${isStory ? 52 : 40}px;font-weight:900;line-height:1;text-transform:uppercase;">${bigTitle}</div>
       </div>
-      <div style="background:#8c52ff;color:#000;padding:${isStory ? '8px 20px' : '6px 16px'};font-weight:900;font-size:${isStory ? 22 : 18}px;text-transform:uppercase;flex-shrink:0;align-self:flex-end;">
-        Fecha ${meta.jornada}
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:${isStory ? 12 : 10}px;flex-shrink:0;">
+        <img src="${origin}/assets/logo.png" style="height:${isStory ? 54 : 44}px;object-fit:contain;" crossorigin="anonymous" />
+        <div style="background:#8c52ff;color:#000;padding:${isStory ? '8px 20px' : '6px 16px'};font-weight:900;font-size:${isStory ? 22 : 18}px;text-transform:uppercase;white-space:nowrap;">
+          Fecha ${meta.jornada}
+        </div>
       </div>
     </div>
 
-    <div style="height:${contentDivH}px;overflow:hidden;position:relative;z-index:1;">
+    <div style="height:${contentDivH}px;overflow:hidden;position:relative;z-index:1;margin-top:${isStory ? 0 : 30}px;">
       ${contentHtml}
     </div>
   </div>`;
