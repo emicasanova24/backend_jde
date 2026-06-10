@@ -1,6 +1,6 @@
 <?php
 /**
- * Banner placeholder — views/partials/banner.php
+ * Banner — views/partials/banner.php
  *
  * Variables (set before include):
  *   string $bannerType    — billboard | leaderboard | rectangle | half-page
@@ -8,9 +8,13 @@
  *   string $bannerId      — unique position ID  (e.g. "home-hero-d")
  *   string $bannerClasses — (optional) overrides the outer-div visibility class;
  *                           when provided, the outer div's default padding is also suppressed.
+ *
+ * La configuración de cada posición se lee desde uploads/banners-cache.json
+ * (generado por la API cada vez que se guarda un cambio desde el admin).
+ * Si el archivo no existe aún, se mantiene el comportamiento de placeholder.
  */
 
-// Inject CSS exactly once per page request
+// ── CSS inyectado una sola vez por request ──────────────────────────────────
 if (!defined('_BANNER_CSS')) {
     define('_BANNER_CSS', 1);
     echo '<style>
@@ -20,6 +24,24 @@ if (!defined('_BANNER_CSS')) {
 </style>';
 }
 
+// ── Cargar cache JSON una sola vez por request ──────────────────────────────
+if (!defined('_BANNERS_DB_LOADED')) {
+    define('_BANNERS_DB_LOADED', 1);
+    $GLOBALS['_BANNERS_DB'] = [];
+    $_cacheFile = dirname(__DIR__, 2) . '/uploads/banners-cache.json';
+    if (is_file($_cacheFile)) {
+        $_raw = file_get_contents($_cacheFile);
+        if ($_raw !== false) {
+            $_parsed = json_decode($_raw, true);
+            if (is_array($_parsed)) {
+                $GLOBALS['_BANNERS_DB'] = $_parsed;
+            }
+        }
+    }
+    unset($_cacheFile, $_raw, $_parsed);
+}
+
+// ── Specs por defecto de cada tipo ─────────────────────────────────────────
 $_bspecs = [
     'billboard'     => ['w'=>970, 'h'=>90,  'label'=>'Billboard 970×90',      'tier'=>'$$$$', 'tc'=>'bnt-p', 'disp'=>'hidden md:flex'],
     'leaderboard'   => ['w'=>728, 'h'=>90,  'label'=>'Leaderboard 728×90',    'tier'=>'$$$',  'tc'=>'bnt-s', 'disp'=>'hidden md:flex'],
@@ -35,32 +57,46 @@ $_bid    = htmlspecialchars($bannerId ?? 'banner', ENT_QUOTES, 'UTF-8');
 $_sticky = ($bannerType === 'mobile-sticky');
 $_cls    = isset($bannerClasses) ? $bannerClasses : $_bs['disp'];
 $_pad    = isset($bannerClasses) ? '' : ' py-5 px-4';
-$_bw     = (int)$_bs['w'];
-$_bh     = (int)$_bs['h'];
 
-// Clean up optional var so it doesn't bleed into the next include
+// ── Leer config desde el cache ──────────────────────────────────────────────
+$_dbCfg  = $GLOBALS['_BANNERS_DB'][$bannerId ?? ''] ?? null;
+$_bw     = ($_dbCfg && isset($_dbCfg['width']))   ? (int)$_dbCfg['width']  : (int)$_bs['w'];
+$_bh     = ($_dbCfg && isset($_dbCfg['height']))  ? (int)$_dbCfg['height'] : (int)$_bs['h'];
+$_imgUrl = ($_dbCfg && !empty($_dbCfg['image_url']) && $_dbCfg['active']) ? $_dbCfg['image_url'] : null;
+$_lnkUrl = ($_dbCfg && !empty($_dbCfg['link_url'])) ? $_dbCfg['link_url'] : null;
+$_altTxt = ($_dbCfg && !empty($_dbCfg['alt_text'])) ? $_dbCfg['alt_text'] : '';
+
+// ── Limpiar variable opcional ───────────────────────────────────────────────
 unset($bannerClasses);
 ?>
 <?php if ($_sticky): ?>
 <div id="ad-<?= $_bid ?>" class="fixed bottom-0 inset-x-0 z-40 flex md:hidden justify-center items-center py-1.5 bg-[#120d1a]/95 border-t border-white/10" aria-label="Espacio publicitario">
-  <div class="banner-slot <?= $_bs['tc'] ?>" style="width:<?= $_bw ?>px;height:<?= $_bh ?>px;max-width:calc(100vw - 2rem)">
-    <span style="font-size:8px;font-weight:700;letter-spacing:.15em;opacity:.6;text-transform:uppercase;white-space:nowrap">Publicidad · <?= htmlspecialchars($_bs['label'], ENT_QUOTES, 'UTF-8') ?></span>
-    <span style="font-size:8px;font-weight:700;padding:1px 7px;border-radius:4px;border:1px solid currentColor;opacity:.8;white-space:nowrap"><?= htmlspecialchars($_bs['tier'], ENT_QUOTES, 'UTF-8') ?> · Tu anuncio aquí · Contactanos</span>
-  </div>
+  <?php if ($_imgUrl): ?>
+    <?php if ($_lnkUrl): ?>
+      <a href="<?= htmlspecialchars($_lnkUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer sponsored">
+        <img src="<?= htmlspecialchars($_imgUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($_altTxt, ENT_QUOTES, 'UTF-8') ?>" width="<?= $_bw ?>" height="<?= $_bh ?>" style="max-width:calc(100vw - 2rem);height:auto;display:block;" loading="lazy"/>
+      </a>
+    <?php else: ?>
+      <img src="<?= htmlspecialchars($_imgUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($_altTxt, ENT_QUOTES, 'UTF-8') ?>" width="<?= $_bw ?>" height="<?= $_bh ?>" style="max-width:calc(100vw - 2rem);height:auto;display:block;" loading="lazy"/>
+    <?php endif; ?>
+  <?php else: ?>
+    <div class="banner-slot <?= $_bs['tc'] ?>" style="width:<?= $_bw ?>px;height:<?= $_bh ?>px;max-width:calc(100vw - 2rem)">
+      <span style="font-size:8px;font-weight:700;letter-spacing:.15em;opacity:.6;text-transform:uppercase;white-space:nowrap">Publicidad · <?= htmlspecialchars($_bs['label'], ENT_QUOTES, 'UTF-8') ?></span>
+      <span style="font-size:8px;font-weight:700;padding:1px 7px;border-radius:4px;border:1px solid currentColor;opacity:.8;white-space:nowrap"><?= htmlspecialchars($_bs['tier'], ENT_QUOTES, 'UTF-8') ?> · Tu anuncio aquí · Contactanos</span>
+    </div>
+  <?php endif; ?>
 </div>
 <div style="height:<?= $_bh + 10 ?>px" class="flex md:hidden" aria-hidden="true"></div>
 <?php else: ?>
 <div id="ad-<?= $_bid ?>" class="<?= htmlspecialchars($_cls, ENT_QUOTES, 'UTF-8') ?> justify-center items-center<?= $_pad ?>" aria-label="Espacio publicitario">
-  <?php if ($_bid === 'home-fxt-tbl-d2' || $_bid === 'home-fxt-tbl-m'): ?>
-    <a href="https://api.whatsapp.com/send?phone=5492392517048&text=Hola%20Eduardo!%20Me%20gustar%C3%ADa%20consultarte%20por%20un%20presupuesto." target="_blank" rel="noopener noreferrer">
-      <img src="/banners-sponsors/eduardo-banner.gif" alt="Eduardo Banner" width="300" height="250" class="rounded-xl shadow-lg border border-white/10" style="max-width:100%;height:auto;" />
-    </a>
-  <?php elseif ($_bid === 'home-prefooter-d'): ?>
-    <a href="https://api.whatsapp.com/send?phone=5492392559254&text=Hola%20Juan!%20Me%20gustar%C3%ADa%20consultarte." target="_blank" rel="noopener noreferrer">
-      <img src="/banners-sponsors/banner-juanoliva.png" alt="Juan Oliva" width="728" height="90" style="max-width:100%;height:auto;border-radius:0.75rem;" />
-    </a>
-  <?php elseif ($_bid === 'home-hero-m'): ?>
-    <img src="/banners-sponsors/banner-el-punto.png" alt="El Punto" width="320" height="100" style="max-width:100%;height:auto;border-radius:0.75rem;" />
+  <?php if ($_imgUrl): ?>
+    <?php if ($_lnkUrl): ?>
+      <a href="<?= htmlspecialchars($_lnkUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer sponsored">
+        <img src="<?= htmlspecialchars($_imgUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($_altTxt, ENT_QUOTES, 'UTF-8') ?>" width="<?= $_bw ?>" height="<?= $_bh ?>" class="rounded-xl shadow-lg border border-white/10" style="max-width:100%;height:auto;" loading="lazy"/>
+      </a>
+    <?php else: ?>
+      <img src="<?= htmlspecialchars($_imgUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($_altTxt, ENT_QUOTES, 'UTF-8') ?>" width="<?= $_bw ?>" height="<?= $_bh ?>" class="rounded-xl shadow-lg border border-white/10" style="max-width:100%;height:auto;" loading="lazy"/>
+    <?php endif; ?>
   <?php else: ?>
     <div class="banner-slot <?= $_bs['tc'] ?>" style="width:<?= $_bw ?>px;height:<?= $_bh ?>px;max-width:calc(100vw - 2rem)">
       <span class="material-symbols-outlined" style="font-size:22px;opacity:.22;color:inherit">image</span>

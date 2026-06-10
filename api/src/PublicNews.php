@@ -50,9 +50,11 @@ function fetchPublicNoticiaBySlug(string $slug): array|false {
             n.tag, n.categoria, n.autor_nombre AS autorNombre, n.estado, n.destacada AS destacada,
             n.tipo_contenido AS tipoContenido, n.boletin_pdf_url AS boletinPdfUrl,
             n.orden_home AS ordenHome, n.published_at AS publishedAt, n.created_at AS createdAt,
-            n.updated_at AS updatedAt, n.temporada_id AS temporadaId, t.nombre AS temporadaNombre
+            n.updated_at AS updatedAt, n.temporada_id AS temporadaId, t.nombre AS temporadaNombre,
+            a.avatar_url AS autorAvatarUrl
         FROM noticias n
         LEFT JOIN temporadas t ON n.temporada_id = t.id
+        LEFT JOIN admin_account a ON a.full_name = n.autor_nombre
         WHERE n.deleted_at IS NULL AND n.estado = 'publicada' AND n.slug = ?
         LIMIT 1",
         [$slug]

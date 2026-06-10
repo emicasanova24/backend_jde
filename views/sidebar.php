@@ -65,6 +65,14 @@
       <span class="material-symbols-outlined">article</span>
       <span class="font-medium">Noticias</span>
     </a>
+    <a data-nav-page="banners" href="/banners" class="sidebar-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body">
+      <span class="material-symbols-outlined">ad_units</span>
+      <span class="font-medium">Banners</span>
+    </a>
+    <a data-nav-page="prode-admin" href="/prode-admin" class="sidebar-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body">
+      <span class="material-symbols-outlined">emoji_events</span>
+      <span class="font-medium">Prode</span>
+    </a>
     <a data-nav-page="estadisticas" href="/estadisticas" class="sidebar-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body">
       <span class="material-symbols-outlined">bar_chart</span>
       <span class="font-medium">Estadísticas</span>
@@ -75,10 +83,13 @@
     </a>
   </nav>
 
-  <div class="px-4 pb-6">
+  <div class="px-4 pb-6 space-y-2">
+    <a href="/" target="_blank" class="flex w-full items-center justify-center gap-2 rounded-xl border border-outline-variant/40 px-3 py-2.5 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-body">
+      <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+      Ver sitio
+    </a>
     <button type="button" data-action="logout" class="flex w-full items-center justify-center gap-2 rounded-xl border border-error/30 px-3 py-2.5 text-sm font-semibold text-error hover:bg-error/10 transition-all font-body">
       <span class="material-symbols-outlined">logout</span>
       Cerrar sesión
     </button>
   </div>
-</aside>

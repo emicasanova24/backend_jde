@@ -1793,7 +1793,17 @@ const noticiasScreen = () => {
         document.getElementById("noticiaImagenAlt").value = item.imagenAlt || "";
         document.getElementById("noticiaTag").value       = item.tag || "";
         document.getElementById("noticiaCategoria").value = item.categoria || "";
-        document.getElementById("noticiaAutor").value     = item.autorNombre || "";
+        const autorSel = document.getElementById("noticiaAutor");
+        const autorVal = item.autorNombre || "";
+        autorSel.value = autorVal;
+        // Si el nombre no coincide con ninguna opción, agregarlo temporalmente
+        if (autorVal && autorSel.value !== autorVal) {
+          const tempOpt = document.createElement("option");
+          tempOpt.value = autorVal;
+          tempOpt.textContent = autorVal;
+          autorSel.insertBefore(tempOpt, autorSel.firstChild);
+          autorSel.value = autorVal;
+        }
         document.getElementById("noticiaEstado").value    = item.estado || "borrador";
         if (tipoSelect) tipoSelect.value = item.tipoContenido || "comun";
         galeriaItems = Array.isArray(item.galeria) ? item.galeria.map((g) => ({ imagenUrl: g.imagenUrl, epigrafe: g.epigrafe || "" })) : [];
@@ -1822,19 +1832,184 @@ const noticiasScreen = () => {
     });
   };
 
-  // Editor enriquecido
+  // ─── Editor enriquecido ───────────────────────────────────────────────────────
+  const editorEl = () => document.getElementById("noticiaContenido");
+
+  // Botones con execCommand genérico (soporta data-arg para formatBlock)
   document.querySelectorAll(".ed-btn[data-cmd]").forEach((btn) => {
     btn.addEventListener("mousedown", (e) => {
       e.preventDefault();
-      document.execCommand(btn.dataset.cmd, false, null);
-      document.getElementById("noticiaContenido").focus();
+      let arg = btn.dataset.arg ?? null;
+      // formatBlock requiere "<h2>" con angle brackets (Firefox/Safari)
+      if (btn.dataset.cmd === "formatBlock" && arg && !arg.startsWith("<")) arg = `<${arg}>`;
+      document.execCommand(btn.dataset.cmd, false, arg);
+      editorEl()?.focus();
     });
   });
+
+  // Link
   document.getElementById("edBtnLink")?.addEventListener("mousedown", (e) => {
     e.preventDefault();
     const url = prompt("URL del link:");
     if (url) document.execCommand("createLink", false, url);
-    document.getElementById("noticiaContenido").focus();
+    editorEl()?.focus();
+  });
+
+  // Blockquote clásico
+  document.getElementById("edBtnBlockquote")?.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    document.execCommand("formatBlock", false, "<blockquote>");
+    editorEl()?.focus();
+  });
+
+  // Helper cross-browser para insertar HTML (execCommand("insertHTML") no soportado en Firefox)
+  const insertHTMLAtCursor = (html) => {
+    if (!document.execCommand("insertHTML", false, html)) {
+      // Fallback Firefox: Range API manual
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      const temp = document.createElement("div");
+      temp.innerHTML = html;
+      const frag = document.createDocumentFragment();
+      let lastNode;
+      while (temp.firstChild) { lastNode = frag.appendChild(temp.firstChild); }
+      range.insertNode(frag);
+      if (lastNode) {
+        const r2 = document.createRange();
+        r2.setStartAfter(lastNode);
+        r2.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(r2);
+      }
+    }
+  };
+
+  // Pull-quote destacado
+  document.getElementById("edBtnPullquote")?.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    const sel = window.getSelection();
+    const selText = (sel && sel.rangeCount > 0) ? sel.toString().trim() : "";
+    const text = selText || "[ Cita destacada ]";
+    insertHTMLAtCursor(`<div class="pull-quote">${text}</div><p><br></p>`);
+  });
+
+  // ─── Embed: toggle panel ─────────────────────────────────────────────────────
+  let _savedEmbedRange = null;
+
+  const saveEditorRange = () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      _savedEmbedRange = sel.getRangeAt(0).cloneRange();
+    }
+  };
+
+  const restoreEditorRange = () => {
+    if (!_savedEmbedRange) return;
+    const sel = window.getSelection();
+    if (sel) { sel.removeAllRanges(); sel.addRange(_savedEmbedRange); }
+  };
+
+  const edEmbedPanel  = document.getElementById("edEmbedPanel");
+  const edEmbedUrlIn  = document.getElementById("edEmbedUrl");
+  const edEmbedError  = document.getElementById("edEmbedError");
+
+  document.getElementById("edBtnEmbed")?.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    if (!edEmbedPanel) return;
+    const isHidden = edEmbedPanel.classList.contains("hidden");
+    if (isHidden) {
+      saveEditorRange();
+      edEmbedPanel.classList.remove("hidden");
+      edEmbedUrlIn?.focus();
+    } else {
+      edEmbedPanel.classList.add("hidden");
+    }
+  });
+
+  document.getElementById("edEmbedCancel")?.addEventListener("click", () => {
+    edEmbedPanel?.classList.add("hidden");
+    if (edEmbedUrlIn) edEmbedUrlIn.value = "";
+    if (edEmbedError) { edEmbedError.textContent = ""; edEmbedError.classList.add("hidden"); }
+  });
+
+  // ─── Embed: helpers de parsing ───────────────────────────────────────────────
+  const parseYouTubeId = (url) => {
+    try {
+      const u = new URL(url);
+      if (/youtu\.be/.test(u.hostname)) return u.pathname.replace("/", "") || null;
+      if (/youtube\.com/.test(u.hostname)) {
+        if (u.searchParams.get("v")) return u.searchParams.get("v");
+        const m = u.pathname.match(/\/(?:embed|shorts|v)\/([a-zA-Z0-9_-]{6,16})/);
+        if (m) return m[1];
+      }
+    } catch (_) { /* noop */ }
+    return null;
+  };
+
+  const parseTwitterUrl = (url) => {
+    try {
+      const u = new URL(url);
+      if (/^(twitter|x)\.com$/.test(u.hostname)) {
+        const m = u.pathname.match(/\/\w+\/status\/(\d+)/);
+        if (m) return url;
+      }
+    } catch (_) { /* noop */ }
+    return null;
+  };
+
+  const parseInstagramUrl = (url) => {
+    try {
+      const u = new URL(url);
+      if (/instagram\.com$/.test(u.hostname)) {
+        if (/^\/(p|reel|tv)\//.test(u.pathname)) return url;
+      }
+    } catch (_) { /* noop */ }
+    return null;
+  };
+
+  // ─── Embed: construir placeholder para el editor ─────────────────────────────
+  const buildEmbedPlaceholder = (type, url, id) => {
+    const icons = { youtube: "🎬", twitter: "🐦", instagram: "📷" };
+    const labels = { youtube: "YouTube", twitter: "Twitter / X", instagram: "Instagram" };
+    const safeUrl = url.replace(/"/g, "&quot;");
+    const safeId  = (id  || "").replace(/"/g, "&quot;");
+    return `<div class="jde-embed" contenteditable="false" data-embed-type="${type}" data-embed-url="${safeUrl}" data-embed-id="${safeId}">${icons[type]} <strong>${labels[type]}</strong>&ensp;<span style="color:#9ca3af;font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:340px;display:inline-block;vertical-align:middle">${safeUrl}</span></div><p><br></p>`;
+  };
+
+  // ─── Embed: insertar ─────────────────────────────────────────────────────────
+  document.getElementById("edEmbedInsert")?.addEventListener("click", () => {
+    const rawUrl = edEmbedUrlIn?.value.trim() ?? "";
+    if (edEmbedError) { edEmbedError.textContent = ""; edEmbedError.classList.add("hidden"); }
+
+    if (!rawUrl) {
+      if (edEmbedError) { edEmbedError.textContent = "Ingresá una URL."; edEmbedError.classList.remove("hidden"); }
+      return;
+    }
+
+    let html = null;
+    const ytId = parseYouTubeId(rawUrl);
+    if (ytId && /^[a-zA-Z0-9_-]{6,16}$/.test(ytId)) {
+      html = buildEmbedPlaceholder("youtube", rawUrl, ytId);
+    } else if (parseTwitterUrl(rawUrl)) {
+      html = buildEmbedPlaceholder("twitter", rawUrl, "");
+    } else if (parseInstagramUrl(rawUrl)) {
+      html = buildEmbedPlaceholder("instagram", rawUrl, "");
+    }
+
+    if (!html) {
+      if (edEmbedError) { edEmbedError.textContent = "URL no reconocida. Usá YouTube, Twitter/X o Instagram."; edEmbedError.classList.remove("hidden"); }
+      return;
+    }
+
+    editorEl()?.focus();
+    restoreEditorRange();
+    insertHTMLAtCursor(html);
+
+    edEmbedPanel?.classList.add("hidden");
+    if (edEmbedUrlIn) edEmbedUrlIn.value = "";
+    _savedEmbedRange = null;
   });
 
   // Upload imagen drag-and-drop
@@ -2120,7 +2295,23 @@ const noticiasScreen = () => {
   updateTipoUi();
   renderGaleria();
 
-  Promise.all([loadTemporadas(), loadNoticias()]);
+  // Poblar select de autores con los perfiles cargados
+  const loadAuthorProfiles = async () => {
+    const sel = document.getElementById("noticiaAutor");
+    if (!sel) return;
+    try {
+      const res = await api.get("/auth/profiles");
+      if (res.success && Array.isArray(res.profiles)) {
+        const defaultOpt = '<option value="">Redacción Juego de Equipo</option>';
+        const opts = res.profiles
+          .map((p) => `<option value="${escapeHtml(p.fullName)}">${escapeHtml(p.fullName)}</option>`)
+          .join("");
+        sel.innerHTML = defaultOpt + opts;
+      }
+    } catch (_) { /* mantiene opción por defecto */ }
+  };
+
+  Promise.all([loadTemporadas(), loadNoticias(), loadAuthorProfiles()]);
 };
 
 const pageInitializers = {

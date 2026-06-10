@@ -594,11 +594,19 @@ async function loadLiveScores() {
       return;
     }
 
+    // Deduplicar por id por si la API devuelve el mismo partido más de una vez
+    const seen = new Set();
+    const uniquePartidos = partidos.filter((p) => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+
     section.classList.remove("hidden");
 
-    container.innerHTML = partidos.map((p) => {
-      const localEsc = p.localEscudo ? `<img src="${p.localEscudo}" alt="" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover bg-white/10 shrink-0" onerror="this.style.display='none'"/>` : "";
-      const visitEsc = p.visitanteEscudo ? `<img src="${p.visitanteEscudo}" alt="" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover bg-white/10 shrink-0" onerror="this.style.display='none'"/>` : "";
+    container.innerHTML = uniquePartidos.map((p) => {
+      const localEsc = p.localEscudo ? `<img src="${p.localEscudo}" alt="" class="w-10 h-10 sm:w-12 sm:h-12 object-contain shrink-0" onerror="this.style.display='none'"/>` : "";
+      const visitEsc = p.visitanteEscudo ? `<img src="${p.visitanteEscudo}" alt="" class="w-10 h-10 sm:w-12 sm:h-12 object-contain shrink-0" onerror="this.style.display='none'"/>` : "";
 
       const broadcastBtn = p.broadcast
         ? `<a href="${p.broadcast}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs font-bold text-red-400 hover:text-red-300 transition-colors mt-2">
@@ -619,23 +627,21 @@ async function loadLiveScores() {
            </div>`
         : "";
 
-      return `<div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col gap-1">
-        <div class="flex items-center justify-center gap-3 sm:gap-5">
-          <div class="flex items-center gap-2 flex-1 justify-end min-w-0">
-            <span class="font-bold text-sm sm:text-base text-right truncate">${p.local}</span>
+      return `<div class="glass-card rounded-2xl p-3 sm:p-5 flex flex-col gap-1 overflow-hidden w-full">
+        <div class="flex items-center justify-between gap-2 sm:gap-5 w-full min-w-0">
+          <div class="flex items-center justify-end flex-1">
             ${localEsc}
           </div>
           <div class="flex flex-col items-center shrink-0">
-            <div class="bg-primary/20 text-primary font-black text-2xl sm:text-3xl px-4 py-1 rounded-xl min-w-[80px] text-center tabular-nums">
+            <div class="bg-primary/20 text-primary font-black text-lg sm:text-3xl px-2 sm:px-4 py-1 rounded-xl min-w-[56px] sm:min-w-[80px] text-center tabular-nums">
               ${p.golesLocal ?? 0} <span class="text-gray-500">-</span> ${p.golesVisitante ?? 0}
             </div>
-            <span class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-red-400 uppercase tracking-widest live-badge">
+            <span class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-red-400 uppercase tracking-widest">
               <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> En vivo
             </span>
           </div>
-          <div class="flex items-center gap-2 flex-1 justify-start min-w-0">
+          <div class="flex items-center justify-start flex-1">
             ${visitEsc}
-            <span class="font-bold text-sm sm:text-base truncate">${p.visitante}</span>
           </div>
         </div>
         ${eventosHtml}

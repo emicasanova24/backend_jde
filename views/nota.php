@@ -70,6 +70,10 @@ $whatsAppShareText = $noticia ? (($noticia['titulo'] ?? 'Juego de Equipo') . ' â
     .article-body .gallery-item { margin: 0 0 1.25rem; }
     .article-body .gallery-item img { width: 100%; border-radius: 12px; display: block; }
     .article-body .gallery-item figcaption { margin-top: .45rem; font-size: .85rem; color: #9ca3af; }
+    .article-body .pull-quote { border-top: 2px solid #8c52ff; border-bottom: 2px solid #8c52ff; padding: 1.25rem 0; text-align: center; font-size: 1.35rem; font-weight: 700; font-style: italic; color: #ffffff; margin: 1.75rem 0; }
+    .article-body .jde-embed { display: none; }
+    .embed-container { position: relative; padding-top: 56.25%; margin: 1.5rem 0; border-radius: 12px; overflow: hidden; background: #0f0f12; }
+    .embed-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
     .boletin-embed { width: 100%; height: 1000px; border: 0; border-radius: 12px; background: #0f0f12; }
     @media (max-width: 768px) {
       .boletin-embed { height: 500px; }
@@ -114,22 +118,8 @@ $whatsAppShareText = $noticia ? (($noticia['titulo'] ?? 'Juego de Equipo') . ' â
   </div>
 </header>
 
-<!-- HERO IMAGEN -->
-<div class="relative w-full h-[50vh] sm:h-[60vh] mt-16 sm:mt-20 overflow-hidden bg-gradient-to-br from-primary/20 to-background-dark" id="heroWrap">
-  <?php if ($noticia && !empty($noticia['imagenUrl'])): ?>
-    <img src="<?= htmlspecialchars($noticia['imagenUrl'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($noticia['titulo'] ?: 'Imagen de la nota'), ENT_QUOTES, 'UTF-8') ?>" class="absolute inset-0 w-full h-full object-cover"/>
-  <?php endif; ?>
-  <!-- Overlay gradiente -->
-  <div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/40 to-transparent"></div>
-  <?php if ($noticia && !empty($noticia['imagenAlt'])): ?>
-    <div class="absolute bottom-6 right-6 sm:right-10 max-w-[70vw] rounded-full bg-black/35 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/90 backdrop-blur-sm text-right">
-      <?= htmlspecialchars((string) $noticia['imagenAlt'], ENT_QUOTES, 'UTF-8') ?>
-    </div>
-  <?php endif; ?>
-</div>
-
 <!-- CONTENIDO PRINCIPAL -->
-<main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+<main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 mt-16 sm:mt-20">
 
   <!-- Breadcrumb -->
   <nav class="flex items-center gap-2 text-xs text-gray-500 mb-8 flex-wrap">
@@ -160,20 +150,52 @@ $whatsAppShareText = $noticia ? (($noticia['titulo'] ?? 'Juego de Equipo') . ' â
         <!-- Meta lÃ­nea -->
         <div id="metaLinea" class="flex flex-wrap items-center gap-3 text-sm text-gray-400">
           <span id="metaAutor" class="flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-[16px] text-gray-500">account_circle</span>
+            <?php if (!empty($noticia['autorAvatarUrl'])): ?>
+              <img src="<?= htmlspecialchars((string) $noticia['autorAvatarUrl'], ENT_QUOTES, 'UTF-8') ?>" alt="" class="w-5 h-5 rounded-full object-cover flex-shrink-0" loading="lazy">
+            <?php else: ?>
+              <span class="material-symbols-outlined text-[16px] text-gray-500">account_circle</span>
+            <?php endif; ?>
             <span><?= htmlspecialchars((string) ($noticia['autorNombre'] ?? 'RedacciÃ³n'), ENT_QUOTES, 'UTF-8') ?></span>
           </span>
           <span class="text-gray-700">Â·</span>
           <time id="metaFecha"><?= htmlspecialchars((string) ($noticia['formattedDate'] ?? ''), ENT_QUOTES, 'UTF-8') ?></time>
           <?php if ($noticia): ?>
-            <span class="text-gray-700">Â·</span>
-            <span><?= htmlspecialchars((string) ($noticia['readingTime'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-          <?php endif; ?>
+            <?php endif; ?>
         </div>
       </div>
 
       <!-- Copete -->
-      <p id="artCopete" class="text-lg sm:text-xl text-gray-300 italic leading-relaxed border-l-4 border-primary pl-5 mb-8"><?= htmlspecialchars((string) ($noticia['copete'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+      <p id="artCopete" class="text-base sm:text-lg text-gray-300 italic leading-relaxed border-l-4 border-primary pl-5 mb-8"><?= htmlspecialchars((string) ($noticia['copete'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+
+      <!-- Imagen principal -->
+      <?php if ($noticia && !empty($noticia['imagenUrl'])): ?>
+        <figure class="mb-8 flex flex-col items-center">
+          <img id="notaHeroImg" src="<?= htmlspecialchars($noticia['imagenUrl'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($noticia['titulo'] ?: 'Imagen de la nota'), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-2xl object-cover max-h-[520px]"/>
+          <?php if (!empty($noticia['imagenAlt'])): ?>
+            <figcaption class="mt-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 text-right w-full"><?= htmlspecialchars((string) $noticia['imagenAlt'], ENT_QUOTES, 'UTF-8') ?></figcaption>
+          <?php endif; ?>
+        </figure>
+        <script>
+        (function(){
+          var img = document.getElementById('notaHeroImg');
+          if (!img) return;
+          function applyOrientation() {
+            if (img.naturalHeight > img.naturalWidth) {
+              // Imagen vertical: mostrar completa, centrada, sin recorte
+              img.style.width = 'auto';
+              img.style.maxWidth = '100%';
+              img.style.maxHeight = '80vh';
+              img.style.objectFit = 'contain';
+            }
+          }
+          if (img.complete && img.naturalWidth > 0) {
+            applyOrientation();
+          } else {
+            img.addEventListener('load', applyOrientation);
+          }
+        })();
+        </script>
+      <?php endif; ?>
 
       <hr class="border-white/5 mb-8"/>
 
@@ -183,6 +205,61 @@ $whatsAppShareText = $noticia ? (($noticia['titulo'] ?? 'Juego de Equipo') . ' â
 
       <!-- Contenido rich text -->
       <div id="artContenido" class="article-body text-base leading-relaxed"><?= $noticia['contenido'] ?? '' ?></div>
+
+      <!-- Conversor de embeds (YouTube / Twitter / Instagram) -->
+      <script>
+      (function(){
+        var art = document.getElementById('artContenido');
+        if (!art) return;
+        var twLoaded = false, igLoaded = false;
+        art.querySelectorAll('.jde-embed').forEach(function(div){
+          var type = div.dataset.embedType;
+          var url  = div.dataset.embedUrl  || '';
+          var id   = div.dataset.embedId   || '';
+          if (type === 'youtube' && /^[a-zA-Z0-9_-]{6,16}$/.test(id)) {
+            var wrap = document.createElement('div');
+            wrap.className = 'embed-container';
+            var iframe = document.createElement('iframe');
+            iframe.src = 'https://www.youtube.com/embed/' + id;
+            iframe.allow = 'accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture';
+            iframe.allowFullscreen = true;
+            iframe.loading = 'lazy';
+            wrap.appendChild(iframe);
+            div.replaceWith(wrap);
+          } else if (type === 'twitter' && url) {
+            var bq = document.createElement('blockquote');
+            bq.className = 'twitter-tweet';
+            var a = document.createElement('a');
+            a.href = url;
+            a.textContent = 'Ver tweet';
+            bq.appendChild(a);
+            div.replaceWith(bq);
+            if (!twLoaded) {
+              twLoaded = true;
+              var s = document.createElement('script');
+              s.src = 'https://platform.twitter.com/widgets.js';
+              s.async = true;
+              s.charset = 'utf-8';
+              document.head.appendChild(s);
+            }
+          } else if (type === 'instagram' && url) {
+            var bq2 = document.createElement('blockquote');
+            bq2.className = 'instagram-media';
+            bq2.dataset.instgrmPermalink = url;
+            bq2.dataset.instgrmVersion = '14';
+            bq2.style.margin = '1.5rem auto';
+            div.replaceWith(bq2);
+            if (!igLoaded) {
+              igLoaded = true;
+              var s2 = document.createElement('script');
+              s2.src = 'https://www.instagram.com/embed.js';
+              s2.async = true;
+              document.head.appendChild(s2);
+            }
+          }
+        });
+      })();
+      </script>
 
       <?php if (($noticia['tipoContenido'] ?? 'comun') === 'boletin' && !empty($noticia['boletinPdfUrl'])): ?>
         <section class="mt-8">
@@ -215,9 +292,13 @@ $whatsAppShareText = $noticia ? (($noticia['titulo'] ?? 'Juego de Equipo') . ' â
       <div class="glass-card rounded-2xl p-5">
         <p class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">Autor</p>
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined text-primary text-[20px]">account_circle</span>
-          </div>
+          <?php if (!empty($noticia['autorAvatarUrl'])): ?>
+            <img src="<?= htmlspecialchars((string) $noticia['autorAvatarUrl'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($noticia['autorNombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="w-10 h-10 rounded-full object-cover flex-shrink-0" loading="lazy">
+          <?php else: ?>
+            <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-primary text-[20px]">account_circle</span>
+            </div>
+          <?php endif; ?>
           <div>
             <p id="sideAutor" class="font-semibold text-sm text-white"><?= htmlspecialchars((string) ($noticia['autorNombre'] ?? 'RedacciÃ³n'), ENT_QUOTES, 'UTF-8') ?></p>
             <p class="text-xs text-gray-500">RedacciÃ³n</p>
@@ -296,6 +377,18 @@ $whatsAppShareText = $noticia ? (($noticia['titulo'] ?? 'Juego de Equipo') . ' â
         <ul class="space-y-2 text-sm text-gray-500">
           <li><a class="hover:text-white transition-colors" href="/estadisticas">EstadÃ­sticas</a></li>
           <li><a class="hover:text-white transition-colors" href="/#h2h">Historial H2H</a></li>
+          <li id="footerProdeLink" class="hidden">
+            <a href="/prode" class="inline-flex items-center gap-1.5 rounded-full bg-primary/20 border border-primary/40 px-3 py-1 text-xs font-bold text-primary hover:bg-primary/30 transition-colors">
+              <span class="material-symbols-outlined text-[13px]">emoji_events</span>
+              Prode Liga
+            </a>
+          </li>
+          <li id="footerMundialLink" class="hidden">
+            <a href="/prode-mundial" class="inline-flex items-center gap-1.5 rounded-full bg-[#c6992a]/20 border border-[#c6992a]/40 px-3 py-1 text-xs font-bold text-[#f5d57a] hover:bg-[#c6992a]/30 transition-colors">
+              <span class="material-symbols-outlined text-[13px]">public</span>
+              Prode Mundial
+            </a>
+          </li>
         </ul>
       </div>
     </div>
@@ -391,6 +484,22 @@ $whatsAppShareText = $noticia ? (($noticia['titulo'] ?? 'Juego de Equipo') . ' â
       badges.insertAdjacentHTML('beforeend', `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-white/5 text-gray-400 border border-white/10 uppercase tracking-wider">${nota.tag}</span>`);
     }
   }
+})();
+</script>
+<script>
+(function () {
+  fetch('/api/prode/config').then(function (r) { return r.json(); }).then(function (data) {
+    if (data && data.enabled) {
+      var ftr = document.getElementById('footerProdeLink');
+      if (ftr) ftr.classList.remove('hidden');
+    }
+  }).catch(function () {});
+  fetch('/api/prode-mundial/config').then(function (r) { return r.json(); }).then(function (data) {
+    if (data && data.enabled) {
+      var ftr = document.getElementById('footerMundialLink');
+      if (ftr) ftr.classList.remove('hidden');
+    }
+  }).catch(function () {});
 })();
 </script>
 </body>

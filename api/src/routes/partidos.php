@@ -238,26 +238,55 @@ function registerPartidosRoutes(Router $router): void {
         // Partidos en curso con marcador + eventos — para polling de tiempo real
         $r->get('/live-scores', function (Request $req, Response $res) {
             try {
-                $partidos = Database::fetchAll(
-                    "SELECT p.id, p.fecha, p.hora, p.estadio, p.estado, p.broadcast,
-                        p.goleslocal AS golesLocal, p.golesvisitante AS golesVisitante,
-                        p.torneo, p.categoria, p.jornada,
-                        el.nombre AS local, ev.nombre AS visitante,
-                        el.id AS localId, ev.id AS visitanteId,
-                        el.escudo AS localEscudo, ev.escudo AS visitanteEscudo
-                    FROM partidos p
-                    LEFT JOIN equipos el ON p.local = el.id
-                    LEFT JOIN equipos ev ON p.visitante = ev.id
-                    WHERE p.estado = 'en_curso'
-                       OR (
-                            p.fecha = CURDATE()
-                            AND LOWER(p.estado) NOT IN ('jugado', 'postergado')
-                            AND p.hora != '00:00:00'
-                            AND NOW() >= DATE_SUB(CAST(CONCAT(p.fecha, ' ', p.hora) AS DATETIME), INTERVAL 15 MINUTE)
-                            AND NOW() <= DATE_ADD(CAST(CONCAT(p.fecha, ' ', p.hora) AS DATETIME), INTERVAL 3 HOUR)
-                       )
-                    ORDER BY p.hora"
-                );
+                if (getHomeConfigValue('live_scores_widget_enabled') === '0') {
+                    return $res->json([]);
+                }
+
+                // Manual override: mostrar partidos seleccionados manualmente
+                $overrideRaw = getHomeConfigValue('live_scores_override_ids');
+                $overrideIds = ($overrideRaw !== null && $overrideRaw !== '')
+                    ? array_values(array_filter(array_map('intval', explode(',', $overrideRaw)), static fn(int $id) => $id > 0))
+                    : [];
+
+                if ($overrideIds) {
+                    $ph = implode(',', array_fill(0, count($overrideIds), '?'));
+                    $partidos = Database::fetchAll(
+                        "SELECT p.id, p.fecha, p.hora, p.estadio, p.estado, p.broadcast,
+                            p.goleslocal AS golesLocal, p.golesvisitante AS golesVisitante,
+                            p.torneo, p.categoria, p.jornada,
+                            el.nombre AS local, ev.nombre AS visitante,
+                            el.id AS localId, ev.id AS visitanteId,
+                            el.escudo AS localEscudo, ev.escudo AS visitanteEscudo
+                        FROM partidos p
+                        LEFT JOIN equipos el ON p.local = el.id
+                        LEFT JOIN equipos ev ON p.visitante = ev.id
+                        WHERE p.id IN ($ph)
+                        ORDER BY p.fecha, p.hora",
+                        $overrideIds
+                    );
+                } else {
+                    $partidos = Database::fetchAll(
+                        "SELECT p.id, p.fecha, p.hora, p.estadio, p.estado, p.broadcast,
+                            p.goleslocal AS golesLocal, p.golesvisitante AS golesVisitante,
+                            p.torneo, p.categoria, p.jornada,
+                            el.nombre AS local, ev.nombre AS visitante,
+                            el.id AS localId, ev.id AS visitanteId,
+                            el.escudo AS localEscudo, ev.escudo AS visitanteEscudo
+                        FROM partidos p
+                        LEFT JOIN equipos el ON p.local = el.id
+                        LEFT JOIN equipos ev ON p.visitante = ev.id
+                        WHERE p.estado = 'en_curso'
+                           OR (
+                                p.fecha = CURDATE()
+                                AND LOWER(p.estado) NOT IN ('jugado', 'postergado')
+                                AND p.hora != '00:00:00'
+                                AND NOW() >= DATE_SUB(CAST(CONCAT(p.fecha, ' ', p.hora) AS DATETIME), INTERVAL 15 MINUTE)
+                                AND NOW() <= DATE_ADD(CAST(CONCAT(p.fecha, ' ', p.hora) AS DATETIME), INTERVAL 3 HOUR)
+                           )
+                        GROUP BY p.id
+                        ORDER BY p.hora"
+                    );
+                }
 
                 if (empty($partidos)) {
                     return $res->json([]);
@@ -291,12 +320,47 @@ function registerPartidosRoutes(Router $router): void {
                     ];
                 }
 
-                $result = array_map(static function (array $p) use ($eventosByPartido): array {
-                    $normalized = normalizePartidoRecord($p);
-                    $pid = (int) $p['id'];
-                    $normalized['eventos'] = $eventosByPartido[$pid] ?? [];
-                    return $normalized;
-                }, $partidos);
+                // En modo manual (overrideIds): mostrar exactamente los partidos elegidos.
+                // En modo automático: deduplicar por (local, visitante, fecha).
+                if ($overrideIds) {
+                    $result = array_map(static function (array $p) use ($eventosByPartido): array {
+                        $normalized = normalizePartidoRecord($p);
+                        $pid = (int) $p['id'];
+                        $normalized['eventos'] = $eventosByPartido[$pid] ?? [];
+                        return $normalized;
+                    }, $partidos);
+                } else {
+                    $deduped = [];
+                    foreach ($partidos as $p) {
+                        $key = min((int)$p['localId'], (int)$p['visitanteId'])
+                             . '_' . max((int)$p['localId'], (int)$p['visitanteId'])
+                             . '_' . $p['fecha'];
+
+                        if (!isset($deduped[$key])) {
+                            $deduped[$key] = $p;
+                            continue;
+                        }
+
+                        $existing = $deduped[$key];
+                        $existingIsLive = $existing['estado'] === 'en_curso';
+                        $newIsLive      = $p['estado'] === 'en_curso';
+
+                        // Prioridad: en_curso > otro estado; empate → mayor id
+                        if (
+                            (!$existingIsLive && $newIsLive) ||
+                            ($existingIsLive === $newIsLive && (int)$p['id'] > (int)$existing['id'])
+                        ) {
+                            $deduped[$key] = $p;
+                        }
+                    }
+
+                    $result = array_map(static function (array $p) use ($eventosByPartido): array {
+                        $normalized = normalizePartidoRecord($p);
+                        $pid = (int) $p['id'];
+                        $normalized['eventos'] = $eventosByPartido[$pid] ?? [];
+                        return $normalized;
+                    }, array_values($deduped));
+                }
 
                 $res->json(array_values($result));
             } catch (\Exception $e) {
@@ -671,6 +735,54 @@ function registerPartidosRoutes(Router $router): void {
             } catch (\Exception $e) {
                 error_log('Error DELETE /partidos/proximo: ' . $e->getMessage());
                 $res->status(500)->json(['error' => 'Error al limpiar el próximo partido manual']);
+            }
+        });
+
+        $r->get('/live-scores-config', function (Request $req, Response $res) {
+            return authMiddleware($req, $res);
+        }, function (Request $req, Response $res) {
+            try {
+                $value = getHomeConfigValue('live_scores_widget_enabled');
+                $enabled = $value === null || $value !== '0';
+                $overrideRaw = getHomeConfigValue('live_scores_override_ids');
+                $overrideIds = ($overrideRaw !== null && $overrideRaw !== '')
+                    ? array_values(array_filter(array_map('intval', explode(',', $overrideRaw)), static fn(int $id) => $id > 0))
+                    : [];
+                $res->json(['enabled' => $enabled, 'overrideIds' => $overrideIds]);
+            } catch (\Exception $e) {
+                error_log('Error GET /partidos/live-scores-config: ' . $e->getMessage());
+                $res->status(500)->json(['error' => 'Error al leer configuración del widget']);
+            }
+        });
+
+        $r->put('/live-scores-config', function (Request $req, Response $res) {
+            return authMiddleware($req, $res);
+        }, function (Request $req, Response $res) {
+            try {
+                $body = $req->body;
+                if (array_key_exists('enabled', $body)) {
+                    $en = filter_var($body['enabled'], FILTER_VALIDATE_BOOLEAN);
+                    setHomeConfigValue('live_scores_widget_enabled', $en ? '1' : '0');
+                }
+                if (array_key_exists('overrideIds', $body)) {
+                    $rawIds = $body['overrideIds'];
+                    if (empty($rawIds)) {
+                        setHomeConfigValue('live_scores_override_ids', null);
+                    } else {
+                        $ids = array_values(array_filter(array_map('intval', (array) $rawIds), static fn(int $id) => $id > 0));
+                        setHomeConfigValue('live_scores_override_ids', $ids ? implode(',', $ids) : null);
+                    }
+                }
+                $enabledVal = getHomeConfigValue('live_scores_widget_enabled');
+                $currentEnabled = $enabledVal === null || $enabledVal !== '0';
+                $overrideRaw = getHomeConfigValue('live_scores_override_ids');
+                $currentOverrideIds = ($overrideRaw !== null && $overrideRaw !== '')
+                    ? array_values(array_filter(array_map('intval', explode(',', $overrideRaw)), static fn(int $id) => $id > 0))
+                    : [];
+                $res->json(['enabled' => $currentEnabled, 'overrideIds' => $currentOverrideIds]);
+            } catch (\Exception $e) {
+                error_log('Error PUT /partidos/live-scores-config: ' . $e->getMessage());
+                $res->status(500)->json(['error' => 'Error al guardar configuración del widget']);
             }
         });
 

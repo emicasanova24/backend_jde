@@ -105,7 +105,7 @@ if (str_starts_with($uri, '/uploads/')) {
 }
 
 // JS del frontend (servidos como estáticos)
-if (preg_match('#^/(app|home|carga|tailwind-config)\.js$#', $uri)) {
+if (preg_match('#^/(app|home|carga|tailwind-config|prode|prode-mundial)\.js$#', $uri)) {
     $serveStatic($root . '/frontend' . $uri);
     exit;
 }
@@ -177,6 +177,10 @@ $webRoutes = [
     '/embed/tabla'      => 'views/embed/tabla.php',
     '/embed/generador'  => 'views/embed/generador.php',
     '/publicidad'       => 'views/publicidad.php',
+    '/prode'            => 'views/prode.php',
+    '/prode-mundial'    => 'views/prode-mundial.php',
+    '/prode-admin'      => 'views/prode-admin.php',
+    '/banners'          => 'views/banners.php',
 ];
 
 if (isset($webRoutes[$uri])) {

@@ -1,0 +1,61 @@
+[
+  {"nombre": "México",              "codigo_pais": "mx", "grupo": "A"},
+  {"nombre": "Sudáfrica",           "codigo_pais": "za", "grupo": "A"},
+  {"nombre": "Corea del Sur",       "codigo_pais": "kr", "grupo": "A"},
+  {"nombre": "República Checa",     "codigo_pais": "cz", "grupo": "A"},
+
+  {"nombre": "Canadá",              "codigo_pais": "ca", "grupo": "B"},
+  {"nombre": "Bosnia-Herzegovina",  "codigo_pais": "ba", "grupo": "B"},
+  {"nombre": "Qatar",               "codigo_pais": "qa", "grupo": "B"},
+  {"nombre": "Suiza",               "codigo_pais": "ch", "grupo": "B"},
+
+  {"nombre": "Brasil",              "codigo_pais": "br", "grupo": "C"},
+  {"nombre": "Marruecos",           "codigo_pais": "ma", "grupo": "C"},
+  {"nombre": "Haití",               "codigo_pais": "ht", "grupo": "C"},
+  {"nombre": "Escocia",             "codigo_pais": "gb-sct", "grupo": "C"},
+
+  {"nombre": "Estados Unidos",      "codigo_pais": "us", "grupo": "D"},
+  {"nombre": "Paraguay",            "codigo_pais": "py", "grupo": "D"},
+  {"nombre": "Australia",           "codigo_pais": "au", "grupo": "D"},
+  {"nombre": "Turquía",             "codigo_pais": "tr", "grupo": "D"},
+
+  {"nombre": "Alemania",            "codigo_pais": "de", "grupo": "E"},
+  {"nombre": "Curazao",             "codigo_pais": "cw", "grupo": "E"},
+  {"nombre": "Costa de Marfil",     "codigo_pais": "ci", "grupo": "E"},
+  {"nombre": "Ecuador",             "codigo_pais": "ec", "grupo": "E"},
+
+  {"nombre": "Países Bajos",        "codigo_pais": "nl", "grupo": "F"},
+  {"nombre": "Japón",               "codigo_pais": "jp", "grupo": "F"},
+  {"nombre": "Suecia",              "codigo_pais": "se", "grupo": "F"},
+  {"nombre": "Túnez",               "codigo_pais": "tn", "grupo": "F"},
+
+  {"nombre": "Bélgica",             "codigo_pais": "be", "grupo": "G"},
+  {"nombre": "Egipto",              "codigo_pais": "eg", "grupo": "G"},
+  {"nombre": "Irán",                "codigo_pais": "ir", "grupo": "G"},
+  {"nombre": "Nueva Zelanda",       "codigo_pais": "nz", "grupo": "G"},
+
+  {"nombre": "España",              "codigo_pais": "es", "grupo": "H"},
+  {"nombre": "Cabo Verde",          "codigo_pais": "cv", "grupo": "H"},
+  {"nombre": "Arabia Saudita",      "codigo_pais": "sa", "grupo": "H"},
+  {"nombre": "Uruguay",             "codigo_pais": "uy", "grupo": "H"},
+
+  {"nombre": "Francia",             "codigo_pais": "fr", "grupo": "I"},
+  {"nombre": "Senegal",             "codigo_pais": "sn", "grupo": "I"},
+  {"nombre": "Iraq",                "codigo_pais": "iq", "grupo": "I"},
+  {"nombre": "Noruega",             "codigo_pais": "no", "grupo": "I"},
+
+  {"nombre": "Argentina",           "codigo_pais": "ar", "grupo": "J"},
+  {"nombre": "Argelia",             "codigo_pais": "dz", "grupo": "J"},
+  {"nombre": "Austria",             "codigo_pais": "at", "grupo": "J"},
+  {"nombre": "Jordania",            "codigo_pais": "jo", "grupo": "J"},
+
+  {"nombre": "Portugal",            "codigo_pais": "pt", "grupo": "K"},
+  {"nombre": "R.D. del Congo",      "codigo_pais": "cd", "grupo": "K"},
+  {"nombre": "Uzbekistán",          "codigo_pais": "uz", "grupo": "K"},
+  {"nombre": "Colombia",            "codigo_pais": "co", "grupo": "K"},
+
+  {"nombre": "Inglaterra",          "codigo_pais": "gb-eng", "grupo": "L"},
+  {"nombre": "Croacia",             "codigo_pais": "hr", "grupo": "L"},
+  {"nombre": "Ghana",               "codigo_pais": "gh", "grupo": "L"},
+  {"nombre": "Panamá",              "codigo_pais": "pa", "grupo": "L"}
+]

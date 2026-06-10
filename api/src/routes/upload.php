@@ -44,14 +44,16 @@ function registerUploadRoutes(Router $router): void {
             // Validar tipo MIME real (no confíes en el nombre del archivo)
             $finfo = new \finfo(FILEINFO_MIME_TYPE);
             $mime  = $finfo->file($file['tmp_name']);
-            $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png'];
+            $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
             if (!in_array($mime, $allowedMimes, true)) {
-                $res->status(400)->json(['error' => 'Tipo de archivo no permitido. Solo PNG, JPG y JPEG']);
+                $res->status(400)->json(['error' => 'Tipo de archivo no permitido. Solo PNG, JPG, GIF y WebP']);
                 return;
             }
 
             $ext = match ($mime) {
                 'image/png'  => 'png',
+                'image/gif'  => 'gif',
+                'image/webp' => 'webp',
                 default      => 'jpg',
             };
 

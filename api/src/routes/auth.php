@@ -278,6 +278,25 @@ function registerAuthRoutes(Router $router): void {
                 return $res->status(500)->json(['success' => false, 'message' => 'No se pudo eliminar el usuario']);
             }
         });
+
+        $r->get('/profiles', function (Request $req, Response $res) {
+            return authMiddleware($req, $res);
+        }, function (Request $req, Response $res) {
+            try {
+                $storage = resolveUsersStorage();
+                if ($storage === 'users') {
+                    ensureUsersTable();
+                    $rows = Database::fetchAll("SELECT id, full_name FROM users ORDER BY full_name ASC");
+                } else {
+                    $rows = Database::fetchAll("SELECT id, full_name FROM admin_account ORDER BY id ASC");
+                }
+                $profiles = array_map(fn($u) => ['id' => $u['id'], 'fullName' => $u['full_name']], $rows);
+                return $res->json(['success' => true, 'profiles' => $profiles]);
+            } catch (\Exception $e) {
+                error_log('Error en GET /auth/profiles: ' . $e->getMessage());
+                return $res->status(500)->json(['success' => false, 'message' => 'No se pudo obtener los perfiles']);
+            }
+        });
     });
 }
 

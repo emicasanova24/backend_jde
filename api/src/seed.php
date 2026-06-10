@@ -196,3 +196,154 @@ function getStoreJugadores(): array {
 function getStorePartidos(): array {
     return json_decode(file_get_contents(__DIR__ . '/data/partidos.json'), true);
 }
+
+// ---------------------------------------------------------------------------
+// Prode Deportivo — tablas propias
+// ---------------------------------------------------------------------------
+function ensureProdeTables(): void {
+    Database::execute("
+        CREATE TABLE IF NOT EXISTS prode_participantes (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            alias VARCHAR(80) NOT NULL,
+            email VARCHAR(191) NOT NULL DEFAULT '',
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_prode_participantes_alias (alias)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    // Migración: agregar email si la tabla fue creada con el esquema anterior (telefono)
+    if (!Database::columnExists('prode_participantes', 'email')) {
+        Database::execute("ALTER TABLE prode_participantes ADD COLUMN email VARCHAR(191) NOT NULL DEFAULT ''");
+    }
+    // Si telefono existe (esquema viejo) aseguramos que tenga DEFAULT '' para no romper INSERTs sin ese campo
+    if (Database::columnExists('prode_participantes', 'telefono')) {
+        Database::execute("ALTER TABLE prode_participantes MODIFY COLUMN telefono VARCHAR(30) NOT NULL DEFAULT ''");
+    }
+    // Crear índice único en email; antes borrar filas sin email válido (datos de prueba del esquema anterior)
+    if (!Database::indexExists('prode_participantes', 'uq_prode_participantes_email')) {
+        Database::execute("SET FOREIGN_KEY_CHECKS=0");
+        Database::execute("DELETE FROM prode_participantes WHERE email = '' OR email IS NULL");
+        Database::execute("SET FOREIGN_KEY_CHECKS=1");
+        Database::ensureUniqueIndex('prode_participantes', 'uq_prode_participantes_email', 'email');
+    }
+
+    Database::execute("
+        CREATE TABLE IF NOT EXISTS prode_sesiones (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            participante_id INT NOT NULL,
+            token VARCHAR(64) NOT NULL,
+            expira_at DATETIME NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_prode_sesiones_token (token),
+            CONSTRAINT fk_prode_sesiones_participante
+                FOREIGN KEY (participante_id) REFERENCES prode_participantes(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    Database::execute("
+        CREATE TABLE IF NOT EXISTS prode_pronosticos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            participante_id INT NOT NULL,
+            partido_id INT NOT NULL,
+            jornada INT NOT NULL,
+            temporada_id INT NOT NULL DEFAULT 2,
+            goles_local INT NOT NULL,
+            goles_visitante INT NOT NULL,
+            puntos_obtenidos INT NULL DEFAULT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_prode_pronosticos (participante_id, partido_id),
+            CONSTRAINT fk_prode_pronosticos_participante
+                FOREIGN KEY (participante_id) REFERENCES prode_participantes(id) ON DELETE CASCADE,
+            CONSTRAINT fk_prode_pronosticos_partido
+                FOREIGN KEY (partido_id) REFERENCES partidos(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    Database::execute("
+        CREATE TABLE IF NOT EXISTS prode_fechas (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            jornada INT NOT NULL,
+            categoria VARCHAR(40) NOT NULL DEFAULT 'Primera',
+            torneo VARCHAR(40) NOT NULL DEFAULT 'Apertura',
+            temporada_id INT NOT NULL DEFAULT 2,
+            estado ENUM('abierta','cerrada') NOT NULL DEFAULT 'abierta',
+            puntos_calculados TINYINT(1) NOT NULL DEFAULT 0,
+            closed_at DATETIME NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_prode_fechas (jornada, categoria, torneo, temporada_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+}
+
+// ---------------------------------------------------------------------------
+// Prode Mundial 2026 — tablas propias
+// ---------------------------------------------------------------------------
+function ensureProdeMundialTables(): void
+{
+    // Selecciones nacionales del mundial
+    Database::execute("
+        CREATE TABLE IF NOT EXISTS mundial_equipos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            codigo_pais CHAR(10) NOT NULL DEFAULT '',
+            grupo CHAR(1) NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_mundial_equipos_nombre (nombre)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    // Rondas del mundial (grupos de partidos para pronósticos)
+    Database::execute("
+        CREATE TABLE IF NOT EXISTS mundial_rondas (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            fase ENUM('grupos','octavos','cuartos','semifinal','tercer_puesto','final') NOT NULL DEFAULT 'grupos',
+            estado ENUM('abierta','cerrada') NOT NULL DEFAULT 'abierta',
+            puntos_calculados TINYINT(1) NOT NULL DEFAULT 0,
+            closed_at DATETIME NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    // Partidos del mundial
+    Database::execute("
+        CREATE TABLE IF NOT EXISTS mundial_partidos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ronda_id INT NULL,
+            fase ENUM('grupos','octavos','cuartos','semifinal','tercer_puesto','final') NOT NULL DEFAULT 'grupos',
+            grupo CHAR(1) NULL,
+            local_id INT NOT NULL,
+            visitante_id INT NOT NULL,
+            fecha DATE NOT NULL,
+            hora TIME NOT NULL DEFAULT '00:00:00',
+            estadio VARCHAR(200) NOT NULL DEFAULT '',
+            estado ENUM('pendiente','en_curso','jugado') NOT NULL DEFAULT 'pendiente',
+            goles_local INT NOT NULL DEFAULT 0,
+            goles_visitante INT NOT NULL DEFAULT 0,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_mundial_partidos_local FOREIGN KEY (local_id) REFERENCES mundial_equipos(id) ON DELETE CASCADE,
+            CONSTRAINT fk_mundial_partidos_visitante FOREIGN KEY (visitante_id) REFERENCES mundial_equipos(id) ON DELETE CASCADE,
+            CONSTRAINT fk_mundial_partidos_ronda FOREIGN KEY (ronda_id) REFERENCES mundial_rondas(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    // Pronósticos del mundial (reutiliza prode_participantes)
+    Database::execute("
+        CREATE TABLE IF NOT EXISTS mundial_pronosticos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            participante_id INT NOT NULL,
+            partido_id INT NOT NULL,
+            goles_local INT NOT NULL,
+            goles_visitante INT NOT NULL,
+            puntos_obtenidos INT NULL DEFAULT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_mundial_pronosticos (participante_id, partido_id),
+            CONSTRAINT fk_mundial_pronosticos_participante
+                FOREIGN KEY (participante_id) REFERENCES prode_participantes(id) ON DELETE CASCADE,
+            CONSTRAINT fk_mundial_pronosticos_partido
+                FOREIGN KEY (partido_id) REFERENCES mundial_partidos(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+}

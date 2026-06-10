@@ -17,8 +17,12 @@ require_once __DIR__ . '/src/routes/semanario.php';
 require_once __DIR__ . '/src/routes/upload.php';
 require_once __DIR__ . '/src/routes/noticias.php';
 require_once __DIR__ . '/src/routes/temporadas.php';
+require_once __DIR__ . '/src/routes/prode.php';
+require_once __DIR__ . '/src/routes/prode-mundial.php';
+require_once __DIR__ . '/src/routes/banners.php';
 require_once __DIR__ . '/src/seed.php';
 require_once __DIR__ . '/src/middleware/auth.php';
+require_once __DIR__ . '/src/ProdeAuth.php';
 
 use App\Router;
 use App\Database;
@@ -31,7 +35,7 @@ use function App\Middleware\authMiddleware;
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Auth-Token');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Auth-Token, X-Prode-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -51,6 +55,9 @@ App\Routes\registerSemanarioRoutes($router);
 App\Routes\registerUploadRoutes($router);
 App\Routes\registerNoticiasRoutes($router);
 App\Routes\registerTemporadasRoutes($router);
+App\Routes\registerProdeRoutes($router);
+App\Routes\registerProdeMundialRoutes($router);
+App\Routes\registerBannersRoutes($router);
 
 // Seed DB
 $router->post('/setup/seed', function (Request $req, Response $res) {

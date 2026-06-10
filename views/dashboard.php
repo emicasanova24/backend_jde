@@ -56,6 +56,62 @@
       </div>
 
       <div class="mb-6 sm:mb-8 rounded-xl border border-outline-variant/10 bg-surface-container-high p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">emoji_events</span>
+              <h2 class="text-lg font-bold font-headline">Prode Deportivo</h2>
+            </div>
+            <p class="text-sm text-on-surface-variant mt-1">Activa o desactiva el acceso público al Prode. El botón en la home se muestra u oculta automáticamente.</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <span id="prodeStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold">
+              <span id="prodeStatusDot" class="w-2 h-2 rounded-full inline-block"></span>
+              <span id="prodeStatusText"></span>
+            </span>
+            <button id="toggleProde" class="h-10 rounded-lg px-5 text-sm font-semibold transition-colors"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-6 sm:mb-8 rounded-xl border border-outline-variant/10 bg-surface-container-high p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold font-headline">Widget Marcadores en Vivo</h2>
+            <p class="text-sm text-on-surface-variant mt-1">Controla la visibilidad de la sección de marcadores en la home.</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <span id="liveWidgetStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold">
+              <span id="liveWidgetStatusDot" class="w-2 h-2 rounded-full inline-block"></span>
+              <span id="liveWidgetStatusText"></span>
+            </span>
+            <button id="toggleLiveWidget" class="h-10 rounded-lg px-5 text-sm font-semibold transition-colors"></button>
+          </div>
+        </div>
+        <div id="liveWidgetModeSection" class="hidden border-t border-outline-variant/10 mt-4 pt-4">
+          <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Modo de partidos</p>
+          <div class="flex flex-wrap gap-5 mb-4">
+            <label class="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="radio" name="liveWidgetMode" id="liveWidgetModeAuto" value="auto" class="accent-primary"/>
+              <span>Automático <span class="text-on-surface-variant text-xs">(partidos del día en horario)</span></span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="radio" name="liveWidgetMode" id="liveWidgetModeManual" value="manual" class="accent-primary"/>
+              <span>Selección manual</span>
+            </label>
+          </div>
+          <div id="liveWidgetMatchListSection" class="hidden">
+            <p class="text-xs text-on-surface-variant mb-3">Marcá los partidos que querés mostrar en el widget:</p>
+            <div id="liveWidgetMatchCheckboxes" class="space-y-1 max-h-52 overflow-y-auto pr-1 mb-3"></div>
+            <div class="flex flex-wrap gap-2 mt-1">
+              <button id="guardarLiveWidgetPartidos" class="h-9 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 transition-colors">Guardar selección</button>
+              <button id="limpiarLiveWidgetPartidos" class="h-9 rounded-lg border border-outline-variant/20 px-4 text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-colors">Volver a automático</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-6 sm:mb-8 rounded-xl border border-outline-variant/10 bg-surface-container-high p-4 sm:p-6">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h2 class="text-lg font-bold font-headline">Partido Siguiente en Home</h2>
@@ -220,6 +276,7 @@ const cargarDashboard = async (categoria = "") => {
     `).join("");
 
     await loadDashboardNextHome(categoria);
+    renderLiveWidgetCheckboxes();
   } catch (err) {
     console.error("Error cargando dashboard:", err);
   }
@@ -257,6 +314,156 @@ limpiarProximoHome.addEventListener("click", async () => {
   }
 });
 cargarDashboard();
+
+// === Widget Marcadores en Vivo ===
+let liveWidgetEnabled = true;
+let liveWidgetOverrideIds = [];
+
+function renderLiveWidgetCheckboxes() {
+  const container = document.getElementById("liveWidgetMatchCheckboxes");
+  if (!container) return;
+  const candidates = dashboardPartidosCache
+    .filter((p) => p.estado !== "jugado")
+    .sort((a, b) => new Date(`${a.fecha}T${a.hora || "00:00"}`) - new Date(`${b.fecha}T${b.hora || "00:00"}`))
+    .slice(0, 40);
+  if (!candidates.length) {
+    container.innerHTML = '<p class="text-xs text-on-surface-variant py-2">No hay partidos disponibles.</p>';
+    return;
+  }
+  container.innerHTML = candidates.map((p) => {
+    const checked = liveWidgetOverrideIds.includes(p.id) ? "checked" : "";
+    const hora = p.hora ? p.hora.slice(0, 5) : "";
+    return `<label class="flex items-center gap-2.5 cursor-pointer text-sm rounded-lg px-2 py-1.5 hover:bg-surface-container transition-colors">
+      <input type="checkbox" value="${p.id}" ${checked} class="w-4 h-4 shrink-0 accent-primary"/>
+      <span>${p.fecha}${hora ? " " + hora : ""} · <strong>${p.local} vs ${p.visitante}</strong> <span class="text-on-surface-variant text-xs">${p.categoria} · ${p.torneo}</span></span>
+    </label>`;
+  }).join("");
+}
+
+function applyLiveWidgetUI(enabled, overrideIds) {
+  liveWidgetEnabled = enabled;
+  liveWidgetOverrideIds = Array.isArray(overrideIds) ? overrideIds : [];
+  const badge = document.getElementById("liveWidgetStatusBadge");
+  const dot = document.getElementById("liveWidgetStatusDot");
+  const text = document.getElementById("liveWidgetStatusText");
+  const btn = document.getElementById("toggleLiveWidget");
+  const modeSection = document.getElementById("liveWidgetModeSection");
+  const matchListSection = document.getElementById("liveWidgetMatchListSection");
+
+  if (enabled) {
+    badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-500/15 text-green-400 border border-green-500/30";
+    dot.className = "w-2 h-2 rounded-full inline-block bg-green-400";
+    text.textContent = "Activo";
+    btn.className = "h-10 rounded-lg px-5 text-sm font-semibold transition-colors bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25";
+    btn.textContent = "Apagar widget";
+    modeSection.classList.remove("hidden");
+  } else {
+    badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/5 text-gray-400 border border-white/10";
+    dot.className = "w-2 h-2 rounded-full inline-block bg-gray-500";
+    text.textContent = "Apagado";
+    btn.className = "h-10 rounded-lg px-5 text-sm font-semibold transition-colors bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/25";
+    btn.textContent = "Activar widget";
+    modeSection.classList.add("hidden");
+  }
+
+  const isManual = liveWidgetOverrideIds.length > 0;
+  document.getElementById("liveWidgetModeAuto").checked = !isManual;
+  document.getElementById("liveWidgetModeManual").checked = isManual;
+  matchListSection.classList.toggle("hidden", !isManual);
+  if (isManual) renderLiveWidgetCheckboxes();
+}
+
+async function loadLiveWidgetConfig() {
+  try {
+    const data = await api.get("/partidos/live-scores-config");
+    applyLiveWidgetUI(data.enabled !== false, data.overrideIds || []);
+  } catch (e) {
+    console.error("No se pudo leer el estado del widget", e);
+  }
+}
+
+document.getElementById("toggleLiveWidget").addEventListener("click", async () => {
+  try {
+    const data = await api.put("/partidos/live-scores-config", { enabled: !liveWidgetEnabled });
+    applyLiveWidgetUI(data.enabled !== false, data.overrideIds || []);
+  } catch (e) {
+    console.error("No se pudo cambiar el estado del widget", e);
+  }
+});
+
+document.querySelectorAll('input[name="liveWidgetMode"]').forEach((radio) => {
+  radio.addEventListener("change", () => {
+    const isManual = document.getElementById("liveWidgetModeManual").checked;
+    document.getElementById("liveWidgetMatchListSection").classList.toggle("hidden", !isManual);
+    if (isManual) renderLiveWidgetCheckboxes();
+  });
+});
+
+document.getElementById("guardarLiveWidgetPartidos").addEventListener("click", async () => {
+  const checked = document.querySelectorAll('#liveWidgetMatchCheckboxes input[type="checkbox"]:checked');
+  const ids = Array.from(checked).map((cb) => Number(cb.value));
+  try {
+    const data = await api.put("/partidos/live-scores-config", { overrideIds: ids });
+    applyLiveWidgetUI(data.enabled !== false, data.overrideIds || []);
+  } catch (e) {
+    console.error("Error guardando selección de partidos", e);
+  }
+});
+
+document.getElementById("limpiarLiveWidgetPartidos").addEventListener("click", async () => {
+  try {
+    const data = await api.put("/partidos/live-scores-config", { overrideIds: [] });
+    applyLiveWidgetUI(data.enabled !== false, data.overrideIds || []);
+  } catch (e) {
+    console.error("Error limpiando selección de partidos", e);
+  }
+});
+
+loadLiveWidgetConfig();
+
+// === Prode toggle ===
+let prodeEnabled = false;
+
+function applyProdeUI(enabled) {
+  prodeEnabled = enabled;
+  const badge = document.getElementById("prodeStatusBadge");
+  const dot   = document.getElementById("prodeStatusDot");
+  const text  = document.getElementById("prodeStatusText");
+  const btn   = document.getElementById("toggleProde");
+  if (enabled) {
+    badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-500/15 text-green-400 border border-green-500/30";
+    dot.className   = "w-2 h-2 rounded-full inline-block bg-green-400";
+    text.textContent = "Activo";
+    btn.className   = "h-10 rounded-lg px-5 text-sm font-semibold transition-colors bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25";
+    btn.textContent = "Desactivar";
+  } else {
+    badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/5 text-gray-400 border border-white/10";
+    dot.className   = "w-2 h-2 rounded-full inline-block bg-gray-500";
+    text.textContent = "Inactivo";
+    btn.className   = "h-10 rounded-lg px-5 text-sm font-semibold transition-colors bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/25";
+    btn.textContent = "Activar";
+  }
+}
+
+async function loadProdeConfig() {
+  try {
+    const data = await api.get("/prode/config");
+    applyProdeUI(data.enabled !== false);
+  } catch (e) {
+    console.error("No se pudo leer el estado del prode", e);
+  }
+}
+
+document.getElementById("toggleProde").addEventListener("click", async () => {
+  try {
+    const data = await api.put("/prode/config", { enabled: !prodeEnabled });
+    applyProdeUI(data.enabled !== false);
+  } catch (e) {
+    console.error("No se pudo cambiar el estado del prode", e);
+  }
+});
+
+loadProdeConfig();
 </script>
 </body>
 </html>

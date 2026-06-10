@@ -119,13 +119,15 @@ function wfB(string $num, string $label, string $dims, string $tier, string $min
 <html class="dark" lang="es">
 <head>
   <meta charset="utf-8"/>
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-W5HHC9P3');</script>
-  <!-- End Google Tag Manager -->
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-G0K2N6WDPF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-G0K2N6WDPF');
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Publicidad — Juego de Equipo</title>
   <meta name="robots" content="noindex,nofollow"/>
@@ -166,10 +168,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   </style>
 </head>
 <body class="bg-background-dark text-white antialiased selection:bg-primary selection:text-white">
-<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W5HHC9P3"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
+
 
 <!-- HEADER -->
 <header class="sticky top-0 z-50 bg-background-dark/90 backdrop-blur-md border-b border-white/8">

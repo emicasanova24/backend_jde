@@ -79,37 +79,30 @@ select { background-color: #1e293b !important; color: #f8fafc !important; }
   width: fit-content;
 }
 .marquee-track:hover { animation-play-state: paused; }
+.marquee-wrapper {
+  position: relative;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
 .marquee-item {
   flex: 0 0 auto;
   max-width: 7rem;
-  padding: 0.45rem 0.9rem;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.5);
-  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(243,244,246,0.98) 100%);
-  box-shadow: 0 8px 22px rgba(0,0,0,0.18);
-  filter: saturate(0.96) contrast(1.04);
-  transition: filter 0.25s, transform 0.25s, box-shadow 0.25s;
+  opacity: 0.7;
+  transition: opacity 0.25s, transform 0.25s;
 }
 .marquee-item:hover {
-  filter: saturate(1.05) contrast(1.08);
+  opacity: 1;
   transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 14px 28px rgba(0,0,0,0.26);
 }
 
 .footer-sponsors img {
-  padding: 0.35rem 0.7rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.16);
-  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(244,245,246,0.98) 100%);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  filter: saturate(0.95) contrast(1.05);
-  transition: transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease;
+  opacity: 0.55;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .footer-sponsors img:hover {
+  opacity: 0.9;
   transform: translateY(-2px);
-  filter: saturate(1.05) contrast(1.08);
-  box-shadow: 0 12px 26px rgba(0,0,0,0.28);
 }
 
 @media (min-width: 640px) {
@@ -124,9 +117,65 @@ select { background-color: #1e293b !important; color: #f8fafc !important; }
 
 /* Smooth scroll */
 html { scroll-behavior: smooth; }
+
+/* Popup sorteo */
+@keyframes fadeInPopup {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+#sorteoPopup { display: flex; }
+#sorteoPopup.hidden { display: none !important; }
+.sorteo-popup-box {
+  position: relative;
+  animation: fadeInPopup 0.25s ease;
+}
+.sorteo-close-btn {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  color: #120d1a;
+  border: none;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+.sorteo-close-btn:hover { transform: scale(1.15); background: #f0f0f0; }
+.sorteo-img-mobile {
+  width: 80vw;
+  height: auto;
+  border-radius: 1rem;
+  display: block;
+}
+.sorteo-img-desktop {
+  max-width: min(90vw, 700px);
+  max-height: 85vh;
+  width: auto;
+  height: auto;
+  border-radius: 1rem;
+  display: block;
+}
+@media (min-width: 768px) {
+  .sorteo-img-mobile  { display: none !important; }
+  .sorteo-img-desktop { display: block !important; }
+}
+@media (max-width: 767px) {
+  .sorteo-img-mobile  { display: block !important; }
+  .sorteo-img-desktop { display: none !important; }
+}
 </style>
 </head>
-<body class="bg-background-dark text-white antialiased selection:bg-primary selection:text-white">
+<body class="bg-background-dark text-white antialiased selection:bg-primary selection:text-white overflow-x-hidden">
 <?php require $root . '/views/partials/gtm-body.php'; ?>
 
 <!-- HEADER -->
@@ -141,11 +190,32 @@ html { scroll-behavior: smooth; }
       <a class="text-sm font-semibold hover:text-primary transition-colors" href="#goleadores">Goleadores</a>
       <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tarjetas">Tarjetas</a>
       <a class="text-sm font-semibold hover:text-primary transition-colors" href="#h2h">H2H</a>
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="/estadisticas">Estadísticas</a>
+      <a id="prodeHeaderBtn" href="/prode" class="hidden relative inline-flex items-center gap-1.5 rounded-full bg-primary/20 border border-primary/50 px-4 py-1.5 text-sm font-bold text-primary hover:bg-primary/35 hover:border-primary/80 transition-all shadow-[0_0_12px_rgba(140,82,255,0.35)] hover:shadow-[0_0_20px_rgba(140,82,255,0.5)]">
+        <span class="material-symbols-outlined text-[15px] text-primary">emoji_events</span>
+        Prode
+        <span class="absolute -top-2 -right-2 flex h-[18px] items-center justify-center rounded-full bg-primary px-1.5 text-[9px] font-black text-white uppercase tracking-wide">nuevo</span>
+      </a>
+      <a id="mundialHeaderBtn" href="/prode-mundial" class="hidden relative inline-flex items-center gap-1.5 rounded-full bg-[#c6992a]/20 border border-[#c6992a]/50 px-4 py-1.5 text-sm font-bold text-[#f5d57a] hover:bg-[#c6992a]/30 hover:border-[#c6992a]/70 transition-all shadow-[0_0_12px_rgba(198,153,42,0.3)] hover:shadow-[0_0_20px_rgba(198,153,42,0.5)]">
+        <span class="material-symbols-outlined text-[15px] text-[#f5d57a]">emoji_events</span>
+        Prode Mundial
+        <span class="absolute -top-2 -right-2 flex h-[18px] items-center justify-center rounded-full bg-[#c6992a] px-1.5 text-[9px] font-black text-black uppercase tracking-wide">nuevo</span>
+      </a>
     </div>
-    <button id="menuToggle" class="md:hidden text-white">
-      <span class="material-symbols-outlined text-[28px]">menu</span>
-    </button>
+    <div class="flex items-center gap-2 md:hidden">
+      <a id="prodeHeaderBtnMobile" href="/prode" class="hidden relative items-center gap-1.5 rounded-full bg-primary/20 border border-primary/50 px-3 py-1.5 text-sm font-bold text-primary hover:bg-primary/35 hover:border-primary/80 transition-all shadow-[0_0_12px_rgba(140,82,255,0.35)]">
+        <span class="material-symbols-outlined text-[15px] text-primary">emoji_events</span>
+        Prode
+        <span class="absolute -top-2 -right-2 flex h-[16px] items-center justify-center rounded-full bg-primary px-1.5 text-[9px] font-black text-white uppercase tracking-wide">nuevo</span>
+      </a>
+      <a id="mundialHeaderBtnMobile" href="/prode-mundial" class="hidden relative items-center gap-1.5 rounded-full bg-[#c6992a]/20 border border-[#c6992a]/50 px-3 py-1.5 text-sm font-bold text-[#f5d57a] hover:bg-[#c6992a]/30 hover:border-[#c6992a]/70 transition-all shadow-[0_0_12px_rgba(198,153,42,0.3)]">
+        <span class="material-symbols-outlined text-[15px] text-[#f5d57a]">emoji_events</span>
+        Mundial
+        <span class="absolute -top-2 -right-2 flex h-[16px] items-center justify-center rounded-full bg-[#c6992a] px-1.5 text-[9px] font-black text-black uppercase tracking-wide">nuevo</span>
+      </a>
+      <button id="menuToggle" class="text-white">
+        <span class="material-symbols-outlined text-[28px]">menu</span>
+      </button>
+    </div>
   </nav>
   <div id="mobileMenu" class="md:hidden bg-background-dark/95 border-t border-white/5 px-4">
     <div class="flex flex-col gap-3 py-4">
@@ -154,7 +224,6 @@ html { scroll-behavior: smooth; }
       <a class="text-sm font-semibold hover:text-primary transition-colors" href="#goleadores">Goleadores</a>
       <a class="text-sm font-semibold hover:text-primary transition-colors" href="#tarjetas">Tarjetas</a>
       <a class="text-sm font-semibold hover:text-primary transition-colors" href="#h2h">H2H</a>
-      <a class="text-sm font-semibold hover:text-primary transition-colors" href="/estadisticas">Estadísticas</a>
     </div>
   </div>
 </header>
@@ -221,8 +290,8 @@ html { scroll-behavior: smooth; }
 
 <!-- SPONSORS MARQUEE -->
 <div class="w-full py-8 sm:py-12" id="sponsors">
-  <p class="text-center text-[10px] font-bold tracking-[0.2em] text-gray-600 uppercase mb-4">Sponsors Oficiales</p>
-  <div class="max-w-7xl mx-auto glass rounded-2xl overflow-hidden py-4 sm:py-6 px-2">
+  <p class="text-center text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase mb-4">Sponsors Oficiales</p>
+  <div class="max-w-7xl mx-auto glass rounded-2xl overflow-hidden py-4 sm:py-6 px-2 marquee-wrapper">
     <div class="marquee-track">
       <img src="/sponsors/1.png" alt="Sponsor 1" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
       <img src="/sponsors/2.png" alt="Sponsor 2" class="marquee-item h-10 sm:h-14 mx-4 sm:mx-6 object-contain"/>
@@ -267,6 +336,19 @@ html { scroll-behavior: smooth; }
   </div>
 </div>
 
+<!-- FIXTURE -->
+<section id="liveScoresSection" class="hidden py-10 sm:py-12 bg-red-950/20 border-y border-red-500/20 overflow-x-hidden">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center gap-3 mb-6">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-widest live-badge">
+        <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> En vivo ahora
+      </span>
+      <h2 class="text-xl sm:text-2xl font-black uppercase">Marcadores</h2>
+    </div>
+    <div id="liveScoresContainer" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full min-w-0"></div>
+  </div>
+</section>
+
 <!-- NOTICIAS -->
 <section id="homeNoticiasSection" class="hidden py-12 sm:py-16">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -282,7 +364,7 @@ html { scroll-behavior: smooth; }
 
 <!-- BANNER 2: post-noticias / $$$ STANDARD -->
 <?php $bannerType = 'leaderboard';    $bannerId = 'home-news-d'; include $root . '/views/partials/banner.php'; ?>
-<?php $bannerType = 'mobile-banner';  $bannerId = 'home-news-m'; include $root . '/views/partials/banner.php'; ?>
+<?php $bannerType = 'mobile-large';  $bannerId = 'home-news-m'; include $root . '/views/partials/banner.php'; ?>
 
 <!-- CATEGORY SELECTOR (sticky) -->
 <div class="sticky top-16 sm:top-20 z-40 bg-background-dark/90 backdrop-blur-md border-b border-white/5 py-3">
@@ -305,19 +387,6 @@ html { scroll-behavior: smooth; }
 </div>
 
 <!-- FIXTURE -->
-<section id="liveScoresSection" class="hidden py-10 sm:py-12 bg-red-950/20 border-y border-red-500/20">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-center gap-3 mb-6">
-      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-widest live-badge">
-        <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> En vivo ahora
-      </span>
-      <h2 class="text-xl sm:text-2xl font-black uppercase">Marcadores</h2>
-    </div>
-    <div id="liveScoresContainer" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-  </div>
-</section>
-
-<!-- FIXTURE -->
 <section class="py-12 sm:py-16" id="fixture">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-end justify-between mb-8 sm:mb-10">
@@ -333,14 +402,9 @@ html { scroll-behavior: smooth; }
   </div>
 </section>
 
-<!-- BANNER 3: entre fixture y tabla / $$$ STANDARD -->
-<div class="hidden md:flex justify-center gap-6 py-5 px-4" aria-label="Espacios publicitarios">
-  <?php $bannerType = 'rectangle'; $bannerId = 'home-fxt-tbl-d1'; $bannerClasses = 'flex'; include $root . '/views/partials/banner.php'; ?>
-  <?php $bannerType = 'rectangle'; $bannerId = 'home-fxt-tbl-d2'; $bannerClasses = 'flex'; include $root . '/views/partials/banner.php'; ?>
-</div>
-<div class="flex md:hidden justify-center py-4 px-4" aria-label="Espacio publicitario">
-  <?php $bannerType = 'rectangle'; $bannerId = 'home-fxt-tbl-m'; $bannerClasses = 'flex'; include $root . '/views/partials/banner.php'; ?>
-</div>
+<!-- BANNER 3: entre fixture y tabla / $$$ LEADERBOARD 728×90 (desktop) + MOBILE BANNER 320×50 -->
+<?php $bannerType = 'leaderboard';    $bannerId = 'home-tbl-gol';   include $root . '/views/partials/banner.php'; ?>
+<?php $bannerType = 'mobile-banner'; $bannerId = 'home-tbl-gol-m'; include $root . '/views/partials/banner.php'; ?>
 
 <!-- TABLA DE POSICIONES -->
 <section class="py-12 sm:py-16 bg-card-dark/30" id="tabla">
@@ -374,8 +438,14 @@ html { scroll-behavior: smooth; }
   </div>
 </section>
 
-<!-- BANNER 4: entre tabla y goleadores / $$ ECONOMY -->
-<?php $bannerType = 'rectangle'; $bannerId = 'home-tbl-gol'; include $root . '/views/partials/banner.php'; ?>
+<!-- BANNER 4: entre tabla y goleadores / $$$ STANDARD -->
+<div class="hidden md:flex justify-center gap-6 py-5 px-4" aria-label="Espacios publicitarios">
+  <?php $bannerType = 'rectangle'; $bannerId = 'home-fxt-tbl-d1'; $bannerClasses = 'flex'; include $root . '/views/partials/banner.php'; ?>
+  <?php $bannerType = 'rectangle'; $bannerId = 'home-fxt-tbl-d2'; $bannerClasses = 'flex'; include $root . '/views/partials/banner.php'; ?>
+</div>
+<div class="flex md:hidden justify-center py-4 px-4" aria-label="Espacio publicitario">
+  <?php $bannerType = 'rectangle'; $bannerId = 'home-fxt-tbl-m'; $bannerClasses = 'flex'; include $root . '/views/partials/banner.php'; ?>
+</div>
 
 <!-- GOLEADORES -->
 <section class="py-12 sm:py-16" id="goleadores">
@@ -388,6 +458,9 @@ html { scroll-behavior: smooth; }
     </div>
   </div>
 </section>
+
+<!-- BANNER: entre goleadores y tarjetas / $$ MOBILE BANNER 320×50 -->
+<?php $bannerType = 'mobile-banner'; $bannerId = 'home-gol-tarj-m'; include $root . '/views/partials/banner.php'; ?>
 
 <!-- TARJETAS -->
 <section class="py-12 sm:py-16 bg-card-dark/30" id="tarjetas">
@@ -498,6 +571,18 @@ html { scroll-behavior: smooth; }
         <ul class="space-y-3 text-sm text-gray-500">
           <li><a class="hover:text-white transition-colors" href="/estadisticas">Estadísticas</a></li>
           <li><a class="hover:text-white transition-colors" href="#h2h">Históricos H2H</a></li>
+          <li id="footerProdeLink" class="hidden">
+            <a href="/prode" class="inline-flex items-center gap-1.5 rounded-full bg-primary/20 border border-primary/40 px-3 py-1 text-xs font-bold text-primary hover:bg-primary/30 transition-colors">
+              <span class="material-symbols-outlined text-[13px]">emoji_events</span>
+              Prode Liga
+            </a>
+          </li>
+          <li id="footerMundialLink" class="hidden">
+            <a href="/prode-mundial" class="inline-flex items-center gap-1.5 rounded-full bg-[#c6992a]/20 border border-[#c6992a]/40 px-3 py-1 text-xs font-bold text-[#f5d57a] hover:bg-[#c6992a]/30 transition-colors">
+              <span class="material-symbols-outlined text-[13px]">public</span>
+              Prode Mundial
+            </a>
+          </li>
         </ul>
       </div>
     </div>
@@ -505,25 +590,25 @@ html { scroll-behavior: smooth; }
     <div class="border-t border-white/5 pt-6 mb-6">
       <p class="text-[9px] font-bold tracking-widest text-gray-600 uppercase text-center mb-3">Sponsors</p>
       <div class="footer-sponsors flex flex-wrap justify-center gap-3 sm:gap-4">
-        <img src="/sponsors/1.png" alt="Sponsor 1" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/2.png" alt="Sponsor 2" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/3.png" alt="Sponsor 3" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/4.png" alt="Sponsor 4" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/5.png" alt="Sponsor 5" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/6.png" alt="Sponsor 6" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/7.png" alt="Sponsor 7" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/8.png" alt="Sponsor 8" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/9.png" alt="Sponsor 9" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/10.png" alt="Sponsor 10" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/11.png" alt="Sponsor 11" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/12.png" alt="Sponsor 12" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/13.png" alt="Sponsor 13" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/14.png" alt="Sponsor 14" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/15.png" alt="Sponsor 15" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/16.png" alt="Sponsor 16" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/17.png" alt="Sponsor 17" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/18.png" alt="Sponsor 18" class="h-6 sm:h-8 object-contain grayscale"/>
-        <img src="/sponsors/19.png" alt="Sponsor 19" class="h-6 sm:h-8 object-contain grayscale"/>
+        <img src="/sponsors/1.png" alt="Sponsor 1" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/2.png" alt="Sponsor 2" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/3.png" alt="Sponsor 3" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/4.png" alt="Sponsor 4" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/5.png" alt="Sponsor 5" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/6.png" alt="Sponsor 6" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/7.png" alt="Sponsor 7" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/8.png" alt="Sponsor 8" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/9.png" alt="Sponsor 9" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/10.png" alt="Sponsor 10" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/11.png" alt="Sponsor 11" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/12.png" alt="Sponsor 12" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/13.png" alt="Sponsor 13" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/14.png" alt="Sponsor 14" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/15.png" alt="Sponsor 15" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/16.png" alt="Sponsor 16" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/17.png" alt="Sponsor 17" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/18.png" alt="Sponsor 18" class="h-6 sm:h-8 object-contain"/>
+        <img src="/sponsors/19.png" alt="Sponsor 19" class="h-6 sm:h-8 object-contain"/>
       </div>
     </div>
     <div class="pt-6 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-gray-600">
@@ -533,7 +618,32 @@ html { scroll-behavior: smooth; }
   </div>
 </footer>
 
+
 <script src="/frontend/home.js"></script>
+<script>
+(function () {
+  fetch('/api/prode/config').then(function (r) { return r.json(); }).then(function (data) {
+    if (data && data.enabled) {
+      var btn = document.getElementById('prodeHeaderBtn');
+      var btnM = document.getElementById('prodeHeaderBtnMobile');
+      var ftr = document.getElementById('footerProdeLink');
+      if (btn) btn.classList.replace('hidden', 'inline-flex');
+      if (btnM) btnM.classList.replace('hidden', 'inline-flex');
+      if (ftr) ftr.classList.remove('hidden');
+    }
+  }).catch(function () {});
+  fetch('/api/prode-mundial/config').then(function (r) { return r.json(); }).then(function (data) {
+    if (data && data.enabled) {
+      var btn = document.getElementById('mundialHeaderBtn');
+      var btnM = document.getElementById('mundialHeaderBtnMobile');
+      var ftr = document.getElementById('footerMundialLink');
+      if (btn) btn.classList.replace('hidden', 'inline-flex');
+      if (btnM) btnM.classList.replace('hidden', 'inline-flex');
+      if (ftr) ftr.classList.remove('hidden');
+    }
+  }).catch(function () {});
+})();
+</script>
 
 <!-- BANNER 6: sticky mobile / $$$$ PREMIUM -->
 <?php $bannerType = 'mobile-sticky'; $bannerId = 'home-sticky-m'; include $root . '/views/partials/banner.php'; ?>

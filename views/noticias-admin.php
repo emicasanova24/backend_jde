@@ -12,10 +12,17 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"/>
   <style>
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-    #noticiaContenido { min-height: 180px; outline: none; line-height: 1.7; }
+    #noticiaContenido { min-height: 220px; outline: none; line-height: 1.7; }
     #noticiaContenido p { margin-bottom: 0.4rem; }
     #noticiaContenido ul, #noticiaContenido ol { padding-left: 1.5rem; margin-bottom: 0.4rem; }
     #noticiaContenido a { color: #8c52ff; text-decoration: underline; }
+    #noticiaContenido h2 { font-size: 1.3rem; font-weight: 700; margin: 1rem 0 0.35rem; color: #111827; }
+    #noticiaContenido h3 { font-size: 1.1rem; font-weight: 600; margin: 0.75rem 0 0.25rem; color: #374151; }
+    #noticiaContenido blockquote { border-left: 3px solid #8c52ff; padding-left: 0.75rem; color: #6b7280; font-style: italic; margin: 0.75rem 0; }
+    #noticiaContenido .pull-quote { border-top: 2px solid #8c52ff; border-bottom: 2px solid #8c52ff; padding: 0.8rem 0; text-align: center; font-size: 1.15rem; font-weight: 700; margin: 1rem 0; color: #111827; }
+    #noticiaContenido .jde-embed { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; padding: 0.6rem 0.9rem; display: flex; align-items: center; gap: 0.5rem; margin: 0.6rem 0; font-size: 0.8rem; color: #374151; cursor: default; user-select: none; }
+    #noticiaContenido .jde-embed a { pointer-events: none; color: #6b7280; text-decoration: none; }
+    #edEmbedPanel { transition: max-height 0.2s ease, opacity 0.2s ease; }
     #dropZoneImg.drag-over { border-color: #8c52ff; background: rgba(140,82,255,0.08); }
     .cropper-view-box, .cropper-face { border-radius: 0; }
     #cropModal img { max-height: 60vh; display: block; }
@@ -57,7 +64,9 @@
           <!-- Autor -->
           <div>
             <label class="block text-xs font-semibold text-on-surface-variant mb-1" for="noticiaAutor">Autor</label>
-            <input id="noticiaAutor" type="text" class="w-full rounded-lg border border-outline-variant/20 bg-surface-container p-2.5 text-sm"/>
+            <select id="noticiaAutor" class="w-full rounded-lg border border-outline-variant/20 bg-surface-container p-2.5 text-sm">
+              <option value="">Redacción Juego de Equipo</option>
+            </select>
           </div>
 
           <!-- Categoría -->
@@ -155,19 +164,45 @@
           <!-- Editor de contenido -->
           <div id="bloqueContenidoComun" class="xl:col-span-4 md:col-span-2">
             <label class="block text-xs font-semibold text-on-surface-variant mb-1">Cuerpo de la nota</label>
-            <div class="flex flex-wrap gap-1 p-1 bg-surface-container rounded-t-lg border border-b-0 border-outline-variant/20 text-sm">
-              <button type="button" data-cmd="bold"                class="ed-btn h-7 w-7 flex items-center justify-center rounded hover:bg-surface-container-high font-bold">B</button>
-              <button type="button" data-cmd="italic"              class="ed-btn h-7 w-7 flex items-center justify-center rounded hover:bg-surface-container-high italic">I</button>
-              <button type="button" data-cmd="underline"           class="ed-btn h-7 w-7 flex items-center justify-center rounded hover:bg-surface-container-high underline">U</button>
-              <div class="w-px bg-outline-variant/30 mx-1"></div>
-              <button type="button" data-cmd="insertUnorderedList" class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs">• Lista</button>
-              <button type="button" data-cmd="insertOrderedList"   class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs">1. Núm</button>
-              <div class="w-px bg-outline-variant/30 mx-1"></div>
-              <button type="button" id="edBtnLink"                  class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs">🔗 Link</button>
-              <button type="button" data-cmd="removeFormat"         class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs text-on-surface-variant">✕ Quitar formato</button>
+            <!-- Barra de herramientas -->
+            <div class="flex flex-wrap gap-1 p-1.5 bg-surface-container rounded-t-lg border border-b-0 border-outline-variant/20 text-sm">
+              <!-- Grupo 1: Formato de texto -->
+              <button type="button" data-cmd="bold"   title="Negrita (Ctrl+B)"    class="ed-btn h-7 w-7 flex items-center justify-center rounded hover:bg-surface-container-high font-bold text-sm" aria-label="Negrita">B</button>
+              <button type="button" data-cmd="italic" title="Itálica (Ctrl+I)"    class="ed-btn h-7 w-7 flex items-center justify-center rounded hover:bg-surface-container-high italic text-sm" aria-label="Itálica">I</button>
+              <button type="button" data-cmd="underline" title="Subrayado (Ctrl+U)" class="ed-btn h-7 w-7 flex items-center justify-center rounded hover:bg-surface-container-high underline text-sm" aria-label="Subrayado">U</button>
+              <div class="w-px bg-outline-variant/30 mx-1 self-stretch"></div>
+              <!-- Grupo 2: Jerarquía de títulos -->
+              <button type="button" data-cmd="formatBlock" data-arg="h2" title="Título H2" class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs font-bold">H2</button>
+              <button type="button" data-cmd="formatBlock" data-arg="h3" title="Subtítulo H3" class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs font-semibold">H3</button>
+              <div class="w-px bg-outline-variant/30 mx-1 self-stretch"></div>
+              <!-- Grupo 3: Listas -->
+              <button type="button" data-cmd="insertUnorderedList" title="Lista con viñetas" class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs">• Lista</button>
+              <button type="button" data-cmd="insertOrderedList"   title="Lista numerada"   class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs">1. Núm</button>
+              <div class="w-px bg-outline-variant/30 mx-1 self-stretch"></div>
+              <!-- Grupo 4: Citas -->
+              <button type="button" id="edBtnBlockquote" title="Cita (blockquote)"  class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs gap-1"><span class="text-on-surface-variant text-base leading-none">❝</span> Cita</button>
+              <button type="button" id="edBtnPullquote" title="Pull-quote destacado" class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs gap-1"><span class="text-primary text-base leading-none">❞</span> Destacada</button>
+              <div class="w-px bg-outline-variant/30 mx-1 self-stretch"></div>
+              <!-- Grupo 5: Inserciones -->
+              <button type="button" id="edBtnLink"  title="Insertar enlace" class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs">🔗 Link</button>
+              <button type="button" id="edBtnEmbed" title="Insertar embed (YouTube, Twitter/X, Instagram)" class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs">🎬 Embed</button>
+              <div class="w-px bg-outline-variant/30 mx-1 self-stretch"></div>
+              <!-- Grupo 6: Utilidades -->
+              <button type="button" data-cmd="removeFormat" title="Quitar formato" class="ed-btn h-7 px-2 flex items-center justify-center rounded hover:bg-surface-container-high text-xs text-on-surface-variant">✕ Formato</button>
+            </div>
+            <!-- Panel embed (oculto por defecto) -->
+            <div id="edEmbedPanel" class="hidden border border-t-0 border-outline-variant/20 bg-surface-container-high px-3 py-2.5">
+              <p class="text-[11px] text-on-surface-variant/70 mb-1.5">Pegá la URL de <span class="font-semibold">YouTube</span>, <span class="font-semibold">Twitter/X</span> o <span class="font-semibold">Instagram</span></p>
+              <div class="flex gap-2 items-center">
+                <input id="edEmbedUrl" type="url" placeholder="https://www.youtube.com/watch?v=..."
+                  class="flex-1 rounded-lg border border-outline-variant/20 bg-surface-container px-2.5 py-1.5 text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"/>
+                <button type="button" id="edEmbedInsert" class="rounded-lg bg-primary/15 border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/25">Insertar</button>
+                <button type="button" id="edEmbedCancel" class="rounded-lg border border-outline-variant/20 px-3 py-1.5 text-xs text-on-surface-variant hover:bg-surface-container">✕</button>
+              </div>
+              <p id="edEmbedError" class="hidden mt-1.5 text-[11px] text-error"></p>
             </div>
             <div id="noticiaContenido" contenteditable="true"
-              class="w-full rounded-b-lg border border-outline-variant/20 bg-white text-gray-900 px-3 py-2.5 text-sm min-h-[200px]"></div>
+              class="w-full rounded-b-lg border border-outline-variant/20 bg-white text-gray-900 px-3 py-2.5 text-sm min-h-[220px]"></div>
           </div>
 
           <!-- Galería -->
