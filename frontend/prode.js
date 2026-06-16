@@ -279,6 +279,21 @@ async function cargarJornadaYPartidos() {
       }
     }
 
+    // Aviso de jornada suspendida
+    const avisoSuspendida = document.getElementById('avisoSuspendida');
+    if (avisoSuspendida) {
+      if (data.suspendida && !data.bloqueado && data.deadline) {
+        const d = new Date(data.deadline.replace(' ', 'T'));
+        const fechaStr = d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+        const horaStr  = d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+        avisoSuspendida.innerHTML = `<span class="material-symbols-outlined text-[18px] shrink-0">pause_circle</span>
+          <span>Esta fecha fue <strong>suspendida por lluvia</strong>. Podés cargar o modificar tus pronósticos hasta el <strong>${fechaStr} a las ${horaStr}</strong>.</span>`;
+        avisoSuspendida.classList.remove('hidden');
+      } else {
+        avisoSuspendida.classList.add('hidden');
+      }
+    }
+
     renderPartidos(data.partidos, data.bloqueado);
     loading.classList.add('hidden');
     lista.classList.remove('hidden');

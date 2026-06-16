@@ -5,6 +5,11 @@ RewriteEngine On
 # Pasar header Authorization a PHP (Apache CGI/FPM lo elimina por defecto)
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+# Permitir métodos PATCH y otros no estándar
+<Limit GET POST PUT PATCH DELETE OPTIONS>
+  Allow from all
+</Limit>
+
 # Rutas web limpias -> index.php, aunque coincidan con directorios físicos como /equipos
 RewriteCond %{REQUEST_URI} ^/(login|dashboard|equipos|jugadores|partidos|carga|account|estadisticas|fixture|sidebar|temporadas|noticias-admin|embed/tabla|embed/generador)/?$
 RewriteRule ^ index.php [QSA,L]

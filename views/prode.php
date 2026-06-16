@@ -180,6 +180,7 @@
           <h2 class="font-bold font-headline text-lg" id="jornadaTitulo">Cargando jornada...</h2>
           <div id="deadlineChip" class="text-xs px-3 py-1 rounded-full font-semibold"></div>
         </div>
+        <div id="avisoSuspendida" class="hidden mt-3 flex items-start gap-2 text-sm font-medium text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-3"></div>
       </div>
 
       <div id="loadingPartidos" class="text-center py-8">
@@ -240,6 +241,12 @@
 
   <!-- Ranking público (sin login) -->
   <section id="seccionRankingPublico" class="hidden">
+    <div class="mb-5 text-center">
+      <button onclick="mostrarVerificacion()" class="w-full py-3 rounded-xl font-bold text-sm bg-primary text-white hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">sports_soccer</span>
+        ¡Participar en el Prode!
+      </button>
+    </div>
     <div class="flex items-center justify-between mb-4">
       <h2 class="font-bold font-headline text-lg">Ranking Prode</h2>
       <div class="flex gap-2">
@@ -251,11 +258,6 @@
       <div class="inline-block w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
     </div>
     <div id="tablaPublicRanking" class="hidden"></div>
-    <div class="mt-6 text-center">
-      <button onclick="mostrarVerificacion()" class="px-6 py-3 rounded-xl font-bold text-sm bg-primary text-white hover:bg-primary/90 transition-colors">
-        Participar en el Prode
-      </button>
-    </div>
   </section>
 
 </div><!-- end max-w-2xl -->

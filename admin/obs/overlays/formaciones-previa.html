@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Overlay Formaciones Previa — JDE OBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body {
+      width:1920px; height:1080px; overflow:hidden;
+      background:transparent; font-family:'Inter',sans-serif;
+    }
+
+    #formaciones {
+      position:absolute; inset:0;
+      display:flex; flex-direction:column;
+      opacity:0; pointer-events:none;
+      transition:opacity .6s ease;
+    }
+    #formaciones.show { opacity:1; }
+
+    /* Fondo */
+    .form-bg {
+      position:absolute; inset:0;
+      background:linear-gradient(160deg,#0d0d18 0%,#12102a 50%,#0d0d18 100%);
+    }
+
+    /* Header */
+    .form-header {
+      position:relative; z-index:1;
+      display:flex; align-items:center; justify-content:center;
+      padding:28px 80px 0;
+    }
+    .form-tournament {
+      font-size:12px; font-weight:700; color:#8B5CF6;
+      letter-spacing:.2em; text-transform:uppercase;
+    }
+
+    /* Cuerpo: dos columnas + central */
+    .form-body {
+      position:relative; z-index:1;
+      flex:1; display:flex; align-items:stretch;
+      padding:24px 60px 40px;
+      gap:0;
+    }
+
+    /* Columna de equipo */
+    .team-col {
+      flex:1; display:flex; flex-direction:column; gap:12px;
+    }
+    .team-col.right { align-items:flex-end; }
+
+    .team-header {
+      display:flex; align-items:center; gap:16px; margin-bottom:8px;
+    }
+    .team-col.right .team-header { flex-direction:row-reverse; }
+
+    .team-logo-big {
+      width:64px; height:64px; object-fit:contain;
+    }
+    .team-logo-placeholder-big {
+      width:64px; height:64px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:28px; font-weight:900; color:#fff;
+    }
+    .team-name-big {
+      font-size:22px; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:.03em;
+    }
+    .team-formation-badge {
+      font-size:12px; font-weight:700; color:#8B5CF6;
+      border:1px solid rgba(139,92,246,.4); border-radius:6px;
+      padding:2px 10px; margin-top:2px; align-self:flex-start;
+    }
+    .team-col.right .team-formation-badge { align-self:flex-end; }
+
+    .player-list {
+      display:flex; flex-direction:column; gap:4px;
+    }
+    .player-row {
+      display:flex; align-items:center; gap:10px;
+      background:rgba(255,255,255,.03); border-radius:6px;
+      padding:6px 12px;
+    }
+    .team-col.right .player-row { flex-direction:row-reverse; text-align:right; }
+    .player-num {
+      font-size:13px; font-weight:700; color:#8B5CF6;
+      width:22px; text-align:center; flex-shrink:0;
+    }
+    .player-name { font-size:14px; font-weight:600; color:#e2e2f0; }
+    .player-icon { font-size:12px; }
+
+    /* Separador central */
+    .center-col {
+      width:180px; flex-shrink:0;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+    }
+    .vs-badge {
+      background:rgba(139,92,246,.15); border:1px solid rgba(139,92,246,.4);
+      border-radius:12px; padding:12px 20px;
+      font-size:28px; font-weight:900; color:#a78bfa;
+    }
+    .dt-block {
+      text-align:center;
+    }
+    .dt-label { font-size:10px; color:#6b7280; letter-spacing:.1em; text-transform:uppercase; }
+    .dt-name  { font-size:12px; font-weight:600; color:#d1d5db; }
+
+    /* Suplentes */
+    .subs-section {
+      position:relative; z-index:1;
+      padding:0 60px 20px;
+    }
+    .subs-label {
+      font-size:10px; font-weight:700; color:#6b7280;
+      letter-spacing:.15em; text-transform:uppercase; margin-bottom:6px;
+    }
+    .subs-row {
+      display:flex; gap:8px; flex-wrap:wrap;
+    }
+    .sub-pill {
+      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
+      border-radius:20px; padding:4px 12px;
+      font-size:11px; font-weight:600; color:#9ca3af;
+      display:flex; align-items:center; gap:6px;
+    }
+    .sub-num { color:#8B5CF6; font-weight:700; }
+  </style>
+</head>
+<body>
+
+  <div id="formaciones">
+    <div class="form-bg"></div>
+
+    <div class="form-header">
+      <div class="form-tournament" id="formTournament">APERTURA 2026</div>
+    </div>
+
+    <div class="form-body">
+
+      <!-- Local -->
+      <div class="team-col left" id="localCol">
+        <div class="team-header">
+          <div id="localLogoWrap"></div>
+          <div>
+            <div class="team-name-big" id="localName">LOCAL</div>
+            <div class="team-formation-badge" id="localFormBadge">4-3-3</div>
+          </div>
+        </div>
+        <div class="player-list" id="localPlayers"></div>
+      </div>
+
+      <!-- Centro -->
+      <div class="center-col">
+        <div class="vs-badge">VS</div>
+        <div class="dt-block">
+          <div class="dt-label">DT Local</div>
+          <div class="dt-name" id="dtLocal">—</div>
+        </div>
+        <div class="dt-block">
+          <div class="dt-label">DT Visit.</div>
+          <div class="dt-name" id="dtVisitante">—</div>
+        </div>
+      </div>
+
+      <!-- Visitante -->
+      <div class="team-col right" id="visitanteCol">
+        <div class="team-header">
+          <div>
+            <div class="team-name-big" id="visitanteName">VISITANTE</div>
+            <div class="team-formation-badge" id="visitanteFormBadge">4-4-2</div>
+          </div>
+          <div id="visitanteLogoWrap"></div>
+        </div>
+        <div class="player-list" id="visitantePlayers"></div>
+      </div>
+
+    </div>
+
+    <!-- Suplentes -->
+    <div class="subs-section">
+      <div style="display:flex;gap:60px">
+        <div style="flex:1">
+          <div class="subs-label">Suplentes Local</div>
+          <div class="subs-row" id="localSubs"></div>
+        </div>
+        <div style="width:180px"></div>
+        <div style="flex:1">
+          <div class="subs-label">Suplentes Visitante</div>
+          <div class="subs-row" id="visitanteSubs"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/overlay-client.js"></script>
+  <script>
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function setLogo(side, logoUrl, color) {
+      const wrap = document.getElementById(`${side}LogoWrap`);
+      if (logoUrl) {
+        wrap.innerHTML = `<img class="team-logo-big" src="${escHtml(logoUrl)}" alt="" onerror="this.parentNode.innerHTML='<div class=team-logo-placeholder-big style=background:${escHtml(color||'#333')}>⚽</div>'">`;
+      } else {
+        wrap.innerHTML = `<div class="team-logo-placeholder-big" style="background:${escHtml(color||'#333')}">⚽</div>`;
+      }
+    }
+
+    function renderPlayers(containerId, jugadores, color) {
+      const ICONS = { gol:'⚽', amarilla:'🟡', roja:'🔴' };
+      const c = document.getElementById(containerId);
+      c.innerHTML = (jugadores || []).slice(0, 11).map(j => {
+        const icons = [
+          j.goles ? `${ICONS.gol}×${j.goles}` : '',
+          j.amarilla ? ICONS.amarilla : '',
+          j.roja ? ICONS.roja : '',
+        ].filter(Boolean).join(' ');
+        return `
+          <div class="player-row">
+            <span class="player-num" style="color:${escHtml(color||'#8B5CF6')}">${j.numero ?? '—'}</span>
+            <span class="player-name">${escHtml(j.nombre || '')}</span>
+            ${icons ? `<span class="player-icon">${icons}</span>` : ''}
+          </div>`;
+      }).join('');
+    }
+
+    function renderSubs(containerId, suplentes) {
+      const c = document.getElementById(containerId);
+      c.innerHTML = (suplentes || []).map(j => `
+        <div class="sub-pill">
+          <span class="sub-num">${j.numero ?? ''}</span>
+          <span>${escHtml(j.nombre || '')}</span>
+        </div>`
+      ).join('');
+    }
+
+    window.onOverlayState = function(state) {
+      const visible = !state.emergencyMode && state.widgets?.formacionPrevia === true;
+      document.getElementById('formaciones').classList.toggle('show', visible);
+      if (!visible) return;
+
+      document.getElementById('formTournament').textContent = state.match?.tournament || 'APERTURA 2026';
+
+      // Local
+      setLogo('local', state.local?.logo, state.local?.color);
+      document.getElementById('localName').textContent = (state.local?.nombre || 'LOCAL').toUpperCase();
+      document.getElementById('localFormBadge').textContent = state.local?.formacion || '4-3-3';
+      renderPlayers('localPlayers', state.local?.jugadores, state.local?.color || '#8B5CF6');
+      renderSubs('localSubs', state.local?.suplentes);
+
+      // Visitante
+      setLogo('visitante', state.visitante?.logo, state.visitante?.color);
+      document.getElementById('visitanteName').textContent = (state.visitante?.nombre || 'VISITANTE').toUpperCase();
+      document.getElementById('visitanteFormBadge').textContent = state.visitante?.formacion || '4-4-2';
+      renderPlayers('visitantePlayers', state.visitante?.jugadores, state.visitante?.color || '#8B5CF6');
+      renderSubs('visitanteSubs', state.visitante?.suplentes);
+
+      // DT
+      document.getElementById('dtLocal').textContent = state.dt?.local || '—';
+      document.getElementById('dtVisitante').textContent = state.dt?.visitante || '—';
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Overlay Alerta — JDE OBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body {
+      width:1920px; height:1080px; overflow:hidden;
+      background:transparent; font-family:'Inter',sans-serif;
+    }
+
+    #alerta {
+      position:absolute;
+      bottom:160px; left:50%; transform:translateX(-50%) translateY(100px);
+      opacity:0;
+      transition: opacity .4s ease, transform .4s cubic-bezier(.22,1,.36,1);
+      pointer-events:none;
+      filter:drop-shadow(0 8px 32px rgba(0,0,0,.8));
+    }
+    #alerta.show {
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
+    }
+
+    .alerta-inner {
+      display:flex; align-items:center; gap:0;
+      min-width:480px;
+    }
+
+    .alerta-accent {
+      width:8px; height:80px; border-radius:4px 0 0 4px;
+    }
+
+    .alerta-icon-block {
+      width:80px; height:80px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:36px;
+    }
+
+    .alerta-content {
+      flex:1; padding:12px 24px 12px 0; background:rgba(13,13,24,.96);
+    }
+    .alerta-label {
+      font-size:11px; font-weight:700; letter-spacing:.12em;
+      text-transform:uppercase; color:#8B5CF6; line-height:1;
+    }
+    .alerta-player {
+      font-size:28px; font-weight:900; color:#ffffff;
+      line-height:1.1; margin-top:2px;
+    }
+    .alerta-meta {
+      font-size:13px; font-weight:500; color:rgba(255,255,255,.6);
+      margin-top:2px;
+    }
+
+    .alerta-minute {
+      width:60px; height:80px;
+      display:flex; align-items:center; justify-content:center;
+      border-radius:0 4px 4px 0;
+    }
+    .alerta-minute span {
+      font-size:22px; font-weight:900; color:#fff;
+      font-variant-numeric:tabular-nums;
+    }
+  </style>
+</head>
+<body>
+  <div id="alerta">
+    <div class="alerta-inner">
+      <div class="alerta-accent" id="alertAccent" style="background:#8B5CF6"></div>
+      <div class="alerta-icon-block" id="alertIconBlock" style="background:rgba(139,92,246,.15)">
+        <span id="alertIcon">⚽</span>
+      </div>
+      <div class="alerta-content" id="alertContent">
+        <div class="alerta-label" id="alertLabel">GOL</div>
+        <div class="alerta-player" id="alertPlayer">—</div>
+        <div class="alerta-meta" id="alertMeta"></div>
+      </div>
+      <div class="alerta-minute" id="alertMinuteBlock" style="background:#8B5CF6">
+        <span id="alertMinute">–'</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/overlay-client.js"></script>
+  <script>
+    const CONFIGS = {
+      gol:      { icon:'⚽', label:'¡GOL!',      color:'#8B5CF6', bg:'rgba(139,92,246,.15)' },
+      amarilla: { icon:'🟡', label:'AMARILLA',    color:'#f59e0b', bg:'rgba(245,158,11,.15)' },
+      roja:     { icon:'🔴', label:'ROJA',        color:'#ef4444', bg:'rgba(239,68,68,.15)'  },
+      var:      { icon:'📺', label:'VAR',         color:'#06b6d4', bg:'rgba(6,182,212,.15)'  },
+      descanso: { icon:'⏸', label:'DESCANSO',    color:'#6366f1', bg:'rgba(99,102,241,.15)' },
+      fin:      { icon:'🏁', label:'FIN DEL PARTIDO', color:'#22c55e', bg:'rgba(34,197,94,.15)' },
+    };
+
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    window.onOverlayState = function(state) {
+      if (state.emergencyMode) {
+        document.getElementById('alerta').classList.remove('show');
+        return;
+      }
+
+      const show = state.alerts?.active === true;
+      const el = document.getElementById('alerta');
+
+      if (show) {
+        const a = state.alerts;
+        const cfg = CONFIGS[a.type] || CONFIGS.gol;
+
+        document.getElementById('alertAccent').style.background = cfg.color;
+        document.getElementById('alertIconBlock').style.background = cfg.bg;
+        document.getElementById('alertIcon').textContent = cfg.icon;
+        document.getElementById('alertLabel').textContent = cfg.label;
+        document.getElementById('alertLabel').style.color = cfg.color;
+        document.getElementById('alertPlayer').textContent = a.player ? escHtml(a.player.toUpperCase()) : '—';
+        document.getElementById('alertMeta').textContent = a.team ? (a.team === 'local' ? '(Local)' : '(Visitante)') : '';
+        document.getElementById('alertMinuteBlock').style.background = cfg.color;
+        document.getElementById('alertMinute').textContent = a.minute ? `${a.minute}'` : '–';
+      }
+
+      el.classList.toggle('show', show);
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Overlay Banner Sponsor — JDE OBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body {
+      width:1920px; height:1080px; overflow:hidden;
+      background:transparent; font-family:'Inter',sans-serif;
+    }
+
+    #banner {
+      position:absolute;
+      bottom:0; left:0; right:0;
+      height:90px;
+      display:flex; align-items:center;
+      opacity:0; transform:translateY(100%);
+      transition: opacity .5s ease, transform .5s cubic-bezier(.22,1,.36,1);
+      pointer-events:none;
+    }
+    #banner.show {
+      opacity:1; transform:translateY(0);
+    }
+
+    .banner-bg {
+      position:absolute; inset:0;
+      background:rgba(13,13,24,.94);
+      border-top:2px solid #8B5CF6;
+    }
+
+    .banner-content {
+      position:relative; z-index:1;
+      display:flex; align-items:center;
+      width:100%; padding:0 64px; gap:32px;
+    }
+
+    .banner-tag {
+      font-size:10px; font-weight:700; color:#8B5CF6;
+      letter-spacing:.15em; text-transform:uppercase;
+      border:1px solid rgba(139,92,246,.4); border-radius:4px;
+      padding:3px 10px; white-space:nowrap;
+    }
+
+    .banner-logo {
+      height:56px; max-width:200px; object-fit:contain;
+    }
+
+    .banner-sponsor {
+      font-size:28px; font-weight:700; color:#ffffff;
+      letter-spacing:.03em;
+    }
+
+    .banner-divider {
+      width:2px; height:40px; background:rgba(139,92,246,.4); border-radius:2px;
+    }
+
+    .banner-powered {
+      font-size:12px; color:rgba(255,255,255,.4); font-weight:500;
+      margin-left:auto;
+    }
+
+    #bannerLogo { display:none; }
+    #bannerLogo.loaded { display:block; }
+  </style>
+</head>
+<body>
+
+  <div id="banner">
+    <div class="banner-bg"></div>
+    <div class="banner-content">
+      <div class="banner-tag">Sponsor Oficial</div>
+      <div class="banner-divider"></div>
+      <img id="bannerLogo" class="banner-logo" src="" alt="">
+      <div class="banner-sponsor" id="bannerSponsor"></div>
+      <div class="banner-powered">Liga JDE</div>
+    </div>
+  </div>
+
+  <script src="/js/overlay-client.js"></script>
+  <script>
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    window.onOverlayState = function(state) {
+      const visible =
+        !state.emergencyMode &&
+        state.widgets?.publicidad === true &&
+        state.ads?.active === true &&
+        (state.ads?.current === 'banner' || state.ads?.current === 'overlay');
+
+      const banner = document.getElementById('banner');
+      banner.classList.toggle('show', visible);
+
+      if (!visible) return;
+
+      const sponsor = state.ads?.sponsor || '';
+      const logo    = state.ads?.logoSponsor || '';
+
+      document.getElementById('bannerSponsor').textContent = sponsor;
+
+      const imgEl = document.getElementById('bannerLogo');
+      if (logo) {
+        imgEl.src = escHtml(logo);
+        imgEl.onload = () => imgEl.classList.add('loaded');
+        imgEl.onerror = () => imgEl.classList.remove('loaded');
+      } else {
+        imgEl.src = '';
+        imgEl.classList.remove('loaded');
+      }
+    };
+  </script>
+</body>
+</html>

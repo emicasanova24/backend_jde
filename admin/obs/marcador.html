@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Marcador — JDE OBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,700;0,900;1,700&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body {
+      width:1920px; height:1080px; overflow:hidden;
+      background:transparent;
+      font-family:'Inter',sans-serif;
+    }
+
+    /* ── Barra marcador (inferior) ── */
+    #scorebar {
+      position:absolute;
+      bottom:60px; left:50%; transform:translateX(-50%);
+      display:flex; align-items:center;
+      opacity:0; transition:opacity .5s ease;
+      filter:drop-shadow(0 4px 24px rgba(0,0,0,.7));
+    }
+    #scorebar.show { opacity:1; }
+
+    .team-block {
+      display:flex; align-items:center; gap:14px;
+      background:rgba(13,13,24,.92);
+      padding:10px 22px; height:64px;
+    }
+    .team-block.local  { border-radius:12px 0 0 12px; padding-right:16px; }
+    .team-block.visitante { border-radius:0 12px 12px 0; padding-left:16px; flex-direction:row-reverse; }
+
+    .team-logo { width:40px; height:40px; object-fit:contain; }
+    .team-logo-placeholder { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; color:#fff; }
+    .team-name { font-size:17px; font-weight:700; color:#ffffff; letter-spacing:.02em; text-transform:uppercase; white-space:nowrap; }
+
+    .score-block {
+      display:flex; align-items:center; gap:0;
+      background:rgba(13,13,24,.97);
+      border-top: 3px solid #8B5CF6;
+      height:64px;
+    }
+    .score-num {
+      font-size:32px; font-weight:900; color:#ffffff;
+      width:52px; text-align:center; line-height:64px;
+      font-variant-numeric:tabular-nums;
+    }
+    .score-sep {
+      font-size:26px; font-weight:700; color:rgba(139,92,246,.6);
+      width:20px; text-align:center;
+    }
+
+    .timer-block {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      background:rgba(139,92,246,1);
+      width:72px; height:64px;
+      position:relative;
+    }
+    .timer-minute {
+      font-size:22px; font-weight:900; color:#fff;
+      line-height:1; font-variant-numeric:tabular-nums;
+    }
+    .timer-period {
+      font-size:9px; font-weight:700; color:rgba(255,255,255,.8);
+      letter-spacing:.08em; text-transform:uppercase; line-height:1;
+    }
+    .timer-added {
+      font-size:10px; font-weight:700; color:#fbbf24;
+      position:absolute; top:3px; right:5px;
+    }
+
+    /* ── Incidencias ── */
+    #incidents-bar {
+      position:absolute;
+      bottom:130px; left:50%; transform:translateX(-50%);
+      display:flex; gap:6px; align-items:center;
+      opacity:0; transition:opacity .4s;
+    }
+    #incidents-bar.show { opacity:1; }
+    .inc-pill {
+      background:rgba(13,13,24,.85);
+      border:1px solid rgba(139,92,246,.3);
+      border-radius:20px; padding:4px 12px;
+      font-size:12px; font-weight:600; color:#e2e2f0;
+      display:flex; align-items:center; gap:5px;
+    }
+    .inc-pill .icon { font-size:13px; }
+
+    /* ── Estado match ── */
+    #match-status {
+      position:absolute;
+      top:40px; left:50%; transform:translateX(-50%);
+      background:rgba(139,92,246,.9);
+      border-radius:20px; padding:5px 20px;
+      font-size:12px; font-weight:700; color:#fff; letter-spacing:.08em; text-transform:uppercase;
+      opacity:0; transition:opacity .5s;
+      white-space:nowrap;
+    }
+    #match-status.show { opacity:1; }
+    #match-status.live {
+      background:rgba(220,38,38,.9);
+      animation: livePulse 2s infinite;
+    }
+    @keyframes livePulse { 0%,100%{opacity:.9} 50%{opacity:.6} }
+
+    /* ── Emergency ── */
+    #emergency-screen {
+      position:absolute; inset:0;
+      background:rgba(0,0,0,.95);
+      display:none; align-items:center; justify-content:center;
+    }
+    #emergency-screen.show { display:flex; }
+    #emergency-screen .msg {
+      color:#ef4444; font-size:48px; font-weight:900; letter-spacing:.1em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Status badge -->
+  <div id="match-status"></div>
+
+  <!-- Barra incidencias -->
+  <div id="incidents-bar"></div>
+
+  <!-- Scorebar principal -->
+  <div id="scorebar">
+
+    <!-- Local -->
+    <div class="team-block local" id="localBlock">
+      <div id="localLogoWrap"></div>
+      <div class="team-name" id="localName">LOCAL</div>
+    </div>
+
+    <!-- Score -->
+    <div class="score-block">
+      <div class="score-num" id="localGoals">0</div>
+      <div class="score-sep">:</div>
+      <div class="score-num" id="visitanteGoals">0</div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-block">
+      <div class="timer-added" id="timerAdded"></div>
+      <div class="timer-minute" id="timerMin">–</div>
+      <div class="timer-period" id="timerPer">PT</div>
+    </div>
+
+    <!-- Visitante -->
+    <div class="team-block visitante" id="visitanteBlock">
+      <div class="team-name" id="visitanteName">VISITANTE</div>
+      <div id="visitanteLogoWrap"></div>
+    </div>
+
+  </div>
+
+  <!-- Emergency overlay -->
+  <div id="emergency-screen">
+    <div class="msg">⚡ SEÑAL NO DISPONIBLE</div>
+  </div>
+
+<script>
+  // ── Timer state ────────────────────────────────────────────────────────────
+  let timerState = { running: false, startTimestamp: null, baseMinute: 0, period: 'PT', addedTime: 0 };
+  const PERIOD_SHORT = { PT:'PT', ET:'ET', ST:'ST', PROL:'PR', PEN:'PEN', FIN:'FIN' };
+
+  function getMinute() {
+    if (!timerState.running || !timerState.startTimestamp) return timerState.baseMinute || 0;
+    return (timerState.baseMinute || 0) + Math.floor((Date.now() - timerState.startTimestamp) / 60000);
+  }
+
+  // Actualiza sólo el display del timer cada segundo
+  setInterval(() => {
+    document.getElementById('timerMin').textContent = getMinute() + "'";
+  }, 1000);
+
+  // ── SSE ───────────────────────────────────────────────────────────────────
+  function connect() {
+    const es = new EventSource('/api/overlay/events');
+    es.onmessage = e => {
+      try {
+        const data = JSON.parse(e.data);
+        renderState(data);
+      } catch(err) { console.error('[marcador]', err); }
+    };
+    es.onerror = () => { es.close(); setTimeout(connect, 3000); };
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  function renderState(s) {
+    // Emergency
+    document.getElementById('emergency-screen').classList.toggle('show', !!s.emergencyMode);
+    if (s.emergencyMode) return;
+
+    // Widget check
+    const show = s.widgets?.marcador !== false;
+    document.getElementById('scorebar').classList.toggle('show', show);
+
+    if (!show) return;
+
+    // Actualizar timer state
+    if (s.timer) timerState = s.timer;
+
+    // Equipos
+    setLogo('local', s.local?.logo, s.local?.color || '#019604');
+    setLogo('visitante', s.visitante?.logo, s.visitante?.color || '#ffffff');
+    document.getElementById('localName').textContent = (s.local?.nombre || 'LOCAL').toUpperCase();
+    document.getElementById('visitanteName').textContent = (s.visitante?.nombre || 'VISITANTE').toUpperCase();
+
+    // Colores de fondo de los bloques del equipo
+    document.getElementById('localBlock').style.borderLeft = `4px solid ${s.local?.color || '#019604'}`;
+    document.getElementById('visitanteBlock').style.borderRight = `4px solid ${s.visitante?.color || '#ffffff'}`;
+
+    // Goles
+    document.getElementById('localGoals').textContent = s.local?.goles ?? 0;
+    document.getElementById('visitanteGoals').textContent = s.visitante?.goles ?? 0;
+
+    // Timer display
+    document.getElementById('timerPer').textContent = PERIOD_SHORT[s.timer?.period || 'PT'] || 'PT';
+    const added = s.timer?.addedTime || 0;
+    document.getElementById('timerAdded').textContent = added > 0 ? `+${added}` : '';
+
+    // Match status badge
+    const statusEl = document.getElementById('match-status');
+    const status = s.match?.status || '';
+    statusEl.textContent = status;
+    statusEl.classList.toggle('show', !!status && status !== 'NO INICIADO');
+    statusEl.classList.toggle('live', status === 'EN VIVO');
+
+    // Incidencias (últimas 5)
+    renderIncidents(s.incidents || []);
+  }
+
+  function setLogo(side, logoUrl, color) {
+    const wrap = document.getElementById(`${side}LogoWrap`);
+    if (logoUrl) {
+      wrap.innerHTML = `<img class="team-logo" src="${escHtml(logoUrl)}" alt="" onerror="this.style.display='none'">`;
+    } else {
+      wrap.innerHTML = `<div class="team-logo-placeholder" style="background:${escHtml(color || '#333')}">⚽</div>`;
+    }
+  }
+
+  function renderIncidents(incidents) {
+    const bar = document.getElementById('incidents-bar');
+    const ICONS = { gol:'⚽', amarilla:'🟡', roja:'🔴', cambio:'🔄', penal:'🎯', var:'📺' };
+    const last = incidents.slice(-6);
+    bar.innerHTML = last.map(i => `
+      <div class="inc-pill">
+        <span class="icon">${ICONS[i.type] || '•'}</span>
+        <span>${escHtml(i.player || '')}</span>
+        ${i.minute ? `<span style="color:#8B5CF6">${i.minute}'</span>` : ''}
+      </div>
+    `).join('');
+    bar.classList.toggle('show', last.length > 0);
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  connect();
+</script>
+</body>
+</html>

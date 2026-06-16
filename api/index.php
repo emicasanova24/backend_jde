@@ -23,6 +23,8 @@ require_once __DIR__ . '/src/routes/banners.php';
 require_once __DIR__ . '/src/seed.php';
 require_once __DIR__ . '/src/middleware/auth.php';
 require_once __DIR__ . '/src/ProdeAuth.php';
+require_once __DIR__ . '/src/OverlayState.php';
+require_once __DIR__ . '/src/routes/overlay.php';
 
 use App\Router;
 use App\Database;
@@ -34,7 +36,7 @@ use function App\Middleware\authMiddleware;
 // CORS
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Auth-Token, X-Prode-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -58,6 +60,7 @@ App\Routes\registerTemporadasRoutes($router);
 App\Routes\registerProdeRoutes($router);
 App\Routes\registerProdeMundialRoutes($router);
 App\Routes\registerBannersRoutes($router);
+App\Routes\registerOverlayRoutes($router);
 
 // Seed DB
 $router->post('/setup/seed', function (Request $req, Response $res) {

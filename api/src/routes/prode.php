@@ -29,6 +29,7 @@ function validarEmail(string $email): bool
 /**
  * Obtiene la jornada activa de Primera División:
  * la próxima con partidos pendientes o en_curso.
+ * Fallback: jornadas suspendidas con deadline_override futuro en prode_fechas.
  */
 function getJornadaActivaPrimera(?string $torneo = null, ?int $temporadaId = null): ?array
 {
@@ -57,18 +58,76 @@ function getJornadaActivaPrimera(?string $torneo = null, ?int $temporadaId = nul
         $params
     );
 
-    return $row ?: null;
+    if ($row) {
+        return $row;
+    }
+
+    // Fallback: jornada suspendida con deadline_override aún vigente
+    $overrideParams = ["pf.categoria = 'Primera'", "pf.estado = 'abierta'", "pf.deadline_override > NOW()"];
+    $overrideExtra  = [];
+    if ($torneo) {
+        $overrideParams[] = 'pf.torneo = ?';
+        $overrideExtra[]  = $torneo;
+    }
+    if ($temporadaId) {
+        $overrideParams[] = 'pf.temporada_id = ?';
+        $overrideExtra[]  = $temporadaId;
+    }
+
+    $suspended = Database::fetchOne(
+        "SELECT pf.jornada, pf.torneo, pf.temporada_id, pf.deadline_override
+         FROM prode_fechas pf
+         WHERE " . implode(' AND ', $overrideParams) . "
+         ORDER BY pf.jornada ASC
+         LIMIT 1",
+        $overrideExtra
+    );
+
+    if (!$suspended) {
+        return null;
+    }
+
+    // Contar todos los partidos de esa jornada (cualquier estado) para el total
+    $totalRow = Database::fetchOne(
+        "SELECT COUNT(*) AS total_partidos,
+                MIN(CONCAT(fecha, ' ', hora)) AS primer_partido
+         FROM partidos
+         WHERE jornada = ? AND categoria = 'Primera' AND torneo = ? AND temporada_id = ?",
+        [(int) $suspended['jornada'], $suspended['torneo'], (int) $suspended['temporada_id']]
+    );
+
+    return [
+        'jornada'        => $suspended['jornada'],
+        'torneo'         => $suspended['torneo'],
+        'temporada_id'   => $suspended['temporada_id'],
+        'primer_partido' => $totalRow['primer_partido'] ?? null,
+        'total_partidos' => $totalRow['total_partidos'] ?? 0,
+        'suspendida'     => true,
+    ];
 }
 
 /**
- * Calcula el deadline de una jornada: 1 hora antes del primer partido.
+ * Calcula el deadline de una jornada: 1 hora antes del primer partido pendiente/en_curso.
+ * Si la jornada tiene un deadline_override en prode_fechas, lo prioriza.
  */
 function calcularDeadline(int $jornada, string $torneo, int $temporadaId): ?string
 {
+    // Prioridad 1: deadline_override configurado por el admin
+    $override = Database::fetchOne(
+        "SELECT deadline_override FROM prode_fechas
+         WHERE jornada = ? AND categoria = 'Primera' AND torneo = ? AND temporada_id = ?",
+        [$jornada, $torneo, $temporadaId]
+    );
+    if ($override && !empty($override['deadline_override'])) {
+        return $override['deadline_override'];
+    }
+
+    // Prioridad 2: 1 hora antes del primer partido pendiente o en_curso de la jornada
     $row = Database::fetchOne(
         "SELECT MIN(CONCAT(fecha, ' ', hora)) AS primer_partido
          FROM partidos
-         WHERE jornada = ? AND torneo = ? AND temporada_id = ? AND categoria = 'Primera'",
+         WHERE jornada = ? AND torneo = ? AND temporada_id = ? AND categoria = 'Primera'
+           AND estado IN ('pendiente', 'en_curso')",
         [$jornada, $torneo, $temporadaId]
     );
 
@@ -235,6 +294,7 @@ function registerProdeRoutes(Router $router): void
                 'bloqueado'        => $deadline ? deadlinePasado($deadline) : false,
                 'abierta'          => $abierta,
                 'puntos_calculados'=> $prodeFecha ? (bool) $prodeFecha['puntos_calculados'] : false,
+                'suspendida'       => !empty($jornada['suspendida']),
             ]);
         });
 
@@ -248,6 +308,7 @@ function registerProdeRoutes(Router $router): void
             $temporadaId = isset($req->query['temporada']) ? (int) $req->query['temporada'] : null;
 
             // Resolver jornada: parámetro explícito o activa
+            $activa = null;
             if (isset($req->query['jornada'])) {
                 $jornNum = (int) $req->query['jornada'];
 
@@ -308,6 +369,7 @@ function registerProdeRoutes(Router $router): void
                 'torneo'   => $torneo,
                 'deadline' => $deadline,
                 'bloqueado'=> $bloqueado,
+                'suspendida'=> !empty($activa['suspendida']),
                 'partidos' => array_values($partidos),
             ]);
         });
@@ -561,7 +623,7 @@ function registerProdeRoutes(Router $router): void
 
             $rows = Database::fetchAll(
                 "SELECT pf.jornada, pf.torneo, pf.temporada_id, pf.estado,
-                        pf.puntos_calculados, pf.closed_at,
+                        pf.puntos_calculados, pf.closed_at, pf.deadline_override,
                         COUNT(DISTINCT pp.participante_id) AS participantes,
                         COUNT(pp.id) AS pronosticos_total
                  FROM prode_fechas pf
@@ -591,11 +653,14 @@ function registerProdeRoutes(Router $router): void
             $result = [];
             foreach ($rows as $row) {
                 $deadline = calcularDeadline((int) $row['jornada'], $row['torneo'], (int) $row['temporada_id']);
+                $suspendida = !empty($row['deadline_override']) && $row['estado'] === 'abierta';
                 $result[] = array_merge($row, [
-                    'deadline'      => $deadline,
-                    'jornada'       => (int) $row['jornada'],
-                    'participantes' => (int) $row['participantes'],
+                    'deadline'          => $deadline,
+                    'deadline_override' => $row['deadline_override'] ?? null,
+                    'jornada'           => (int) $row['jornada'],
+                    'participantes'     => (int) $row['participantes'],
                     'pronosticos_total' => (int) $row['pronosticos_total'],
+                    'suspendida'        => $suspendida,
                 ]);
             }
 
@@ -608,15 +673,84 @@ function registerProdeRoutes(Router $router): void
                     'estado'            => 'abierta',
                     'puntos_calculados' => 0,
                     'closed_at'         => null,
+                    'deadline_override' => null,
                     'deadline'          => $deadline,
                     'participantes'     => (int) $row['participantes'],
                     'pronosticos_total' => (int) $row['pronosticos_total'],
+                    'suspendida'        => false,
                 ];
             }
 
             usort($result, fn($a, $b) => $b['jornada'] <=> $a['jornada']);
 
             return $res->json(['fechas' => $result]);
+        });
+
+        // -----------------------------------------------------------------------
+        // PUT /prode/admin/fecha/:jornada/deadline  [requiere JWT admin]
+        // Permite establecer o borrar un deadline_override para jornadas suspendidas.
+        // -----------------------------------------------------------------------
+        $r->put('/admin/fecha/:jornada/deadline', function (Request $req, Response $res) {
+            return authMiddleware($req, $res);
+        }, function (Request $req, Response $res) {
+            ensureProdeTables();
+
+            $jornada = (int) $req->params['jornada'];
+            if ($jornada <= 0) {
+                return $res->status(400)->json(['error' => 'Jornada inválida']);
+            }
+
+            $torneo          = $req->body['torneo']           ?? null;
+            $temporadaId     = isset($req->body['temporada_id']) ? (int) $req->body['temporada_id'] : null;
+            $deadlineOverride = isset($req->body['deadline_override'])
+                ? ($req->body['deadline_override'] === '' || $req->body['deadline_override'] === null
+                    ? null
+                    : (string) $req->body['deadline_override'])
+                : null;
+
+            // Validar formato si se provee
+            if ($deadlineOverride !== null) {
+                $ts = strtotime($deadlineOverride);
+                if ($ts === false) {
+                    return $res->status(400)->json(['error' => 'Formato de deadline inválido. Usar YYYY-MM-DD HH:MM:SS']);
+                }
+                $deadlineOverride = date('Y-m-d H:i:s', $ts);
+            }
+
+            // Inferir torneo/temporada si no vienen
+            if (!$torneo || !$temporadaId) {
+                $infer = Database::fetchOne(
+                    "SELECT torneo, temporada_id FROM partidos
+                     WHERE jornada = ? AND categoria = 'Primera'
+                     LIMIT 1",
+                    [$jornada]
+                );
+                if (!$infer) {
+                    return $res->status(404)->json(['error' => 'No se encontraron partidos para esta jornada']);
+                }
+                $torneo      = $torneo      ?? $infer['torneo'];
+                $temporadaId = $temporadaId ?? (int) $infer['temporada_id'];
+            }
+
+            // Crear o actualizar registro en prode_fechas
+            Database::execute(
+                "INSERT INTO prode_fechas
+                    (jornada, categoria, torneo, temporada_id, estado, deadline_override)
+                 VALUES (?, 'Primera', ?, ?, 'abierta', ?)
+                 ON DUPLICATE KEY UPDATE
+                    deadline_override = VALUES(deadline_override)",
+                [$jornada, $torneo, $temporadaId, $deadlineOverride]
+            );
+
+            return $res->json([
+                'jornada'           => $jornada,
+                'torneo'            => $torneo,
+                'temporada_id'      => $temporadaId,
+                'deadline_override' => $deadlineOverride,
+                'mensaje'           => $deadlineOverride
+                    ? "Plazo extendido hasta {$deadlineOverride}"
+                    : 'Deadline override eliminado. Vuelve al cálculo automático.',
+            ]);
         });
 
         // -----------------------------------------------------------------------

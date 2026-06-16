@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OBS Panel — JDE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: { DEFAULT: '#8B5CF6', dark: '#6D28D9', light: '#A78BFA' },
+            surface: { DEFAULT: '#13131f', card: '#1e1e2e', border: 'rgba(139,92,246,0.2)' }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { background: #0d0d18; color: #e2e2f0; }
+    .card { background: #13131f; border: 1px solid rgba(139,92,246,0.2); border-radius: 12px; }
+    .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:600; }
+    .badge-green  { background:#14532d; color:#86efac; }
+    .badge-red    { background:#4c0519; color:#fca5a5; }
+    .badge-yellow { background:#422006; color:#fcd34d; }
+    .badge-gray   { background:#1f2937; color:#9ca3af; }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:opacity .15s; border:none; }
+    .btn:disabled { opacity:.4; cursor:not-allowed; }
+    .btn-primary { background:#8B5CF6; color:#fff; }
+    .btn-primary:hover:not(:disabled) { background:#7c3aed; }
+    .btn-danger  { background:#dc2626; color:#fff; }
+    .btn-danger:hover:not(:disabled) { background:#b91c1c; }
+    .btn-ghost   { background:rgba(139,92,246,0.12); color:#a78bfa; }
+    .btn-ghost:hover:not(:disabled) { background:rgba(139,92,246,0.25); }
+    .btn-sm { padding:4px 10px; font-size:12px; }
+    input, select, textarea {
+      background:#0d0d18; border:1px solid rgba(139,92,246,0.3); color:#e2e2f0;
+      border-radius:7px; padding:6px 10px; font-size:13px; width:100%; outline:none;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus { border-color:#8B5CF6; }
+    label { font-size:12px; color:#a78bfa; font-weight:600; display:block; margin-bottom:4px; }
+    .section-header { font-size:13px; font-weight:700; color:#8B5CF6; letter-spacing:.05em; text-transform:uppercase; margin-bottom:12px; }
+    .toggle { position:relative; display:inline-block; width:40px; height:22px; }
+    .toggle input { opacity:0; width:0; height:0; }
+    .slider { position:absolute; cursor:pointer; inset:0; background:#374151; border-radius:22px; transition:.3s; }
+    .slider:before { position:absolute; content:""; width:16px; height:16px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; }
+    input:checked + .slider { background:#8B5CF6; }
+    input:checked + .slider:before { transform:translateX(18px); }
+    #toast { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+    .toast-item { padding:10px 18px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 4px 20px rgba(0,0,0,.5); animation: fadeIn .2s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+    .dot-green { background:#22c55e; box-shadow:0 0 6px #22c55e; animation: pulse 1.5s infinite; }
+    .dot-gray  { background:#6b7280; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    #sseStatus { font-size:12px; display:flex; align-items:center; gap:4px; }
+    .incident-row { display:flex; align-items:center; gap:8px; padding:6px 8px; background:#0d0d18; border-radius:6px; font-size:12px; }
+  </style>
+</head>
+<body class="min-h-screen font-sans">
+
+<!-- Login overlay -->
+<div id="loginScreen" style="position:fixed;inset:0;background:#0d0d18;z-index:9000;display:flex;align-items:center;justify-content:center;">
+  <div class="card p-8" style="width:340px">
+    <h2 class="text-lg font-bold text-white mb-1">OBS Panel — JDE</h2>
+    <p class="text-xs text-gray-400 mb-6">Ingresá con tu cuenta de administrador</p>
+    <div class="space-y-3">
+      <div><label>Usuario / Email</label><input id="loginUser" type="text" placeholder="admin@jde.com" autocomplete="username"></div>
+      <div><label>Contraseña</label><input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="btn btn-primary w-full" onclick="doLogin()" id="btnLogin">Entrar</button>
+      <div id="loginError" class="text-red-400 text-xs text-center" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- App principal (oculto hasta autenticar) -->
+<div id="mainContent" style="display:none" class="p-4">
+
+<!-- Header -->
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-xl font-bold text-white">OBS Panel <span class="text-brand text-base font-normal">/ Control de Overlays</span></h1>
+    <div id="sseStatus"><span class="status-dot dot-gray" id="statusDot"></span><span id="statusText">Conectando...</span></div>
+  </div>
+  <div class="flex gap-2">
+    <button class="btn btn-ghost btn-sm" onclick="resetState()">↺ Reset</button>
+    <button class="btn btn-danger btn-sm" id="btnEmergency" onclick="toggleEmergency()">⚡ Emergencia OFF</button>
+  </div>
+</div>
+
+<!-- Grid principal -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+  <!-- COLUMNA 1: Partido + Timer + Incidencias -->
+  <div class="space-y-4">
+
+    <!-- Partido -->
+    <div class="card p-4">
+      <div class="section-header">Partido</div>
+      <div class="space-y-3">
+        <div>
+          <label>Estado</label>
+          <select id="matchStatus">
+            <option>NO INICIADO</option><option>EN VIVO</option><option>DESCANSO</option>
+            <option>SEGUNDO TIEMPO</option><option>PRÓRROGA</option><option>PENALES</option><option>FINALIZADO</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label>Árbitro</label><input id="matchReferee" placeholder="Nombre árbitro"></div>
+          <div><label>Estadio</label><input id="matchStadium" placeholder="Estadio"></div>
+        </div>
+        <div><label>Torneo</label><input id="matchTournament" placeholder="APERTURA 2026"></div>
+        <button class="btn btn-primary w-full" onclick="saveMatch()">Guardar Partido</button>
+      </div>
+    </div>
+
+    <!-- Timer -->
+    <div class="card p-4">
+      <div class="section-header">Timer</div>
+      <div class="text-center mb-3">
+        <div id="timerDisplay" class="text-5xl font-bold text-white tabular-nums">00'</div>
+        <div id="timerPeriod" class="text-brand text-sm mt-1">PRIMER TIEMPO</div>
+      </div>
+      <div class="flex gap-2 mb-3">
+        <button class="btn btn-primary flex-1" id="btnStart" onclick="timerStart()">▶ Iniciar</button>
+        <button class="btn btn-ghost flex-1" id="btnPause" onclick="timerPause()">⏸ Pausar</button>
+        <button class="btn btn-danger" onclick="timerReset()">↺</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <div>
+          <label>Período</label>
+          <select id="timerPeriodSel" onchange="changePeriod()">
+            <option value="PT">Primer Tiempo (PT)</option>
+            <option value="ET">Entretiempo (ET)</option>
+            <option value="ST">Segundo Tiempo (ST)</option>
+            <option value="PROL">Prórroga (PROL)</option>
+            <option value="PEN">Penales (PEN)</option>
+            <option value="FIN">Finalizado (FIN)</option>
+          </select>
+        </div>
+        <div>
+          <label>Min. adicional</label>
+          <div class="flex gap-1">
+            <input id="addedTime" type="number" min="0" max="20" placeholder="0" style="width:60px">
+            <button class="btn btn-ghost btn-sm" onclick="saveAddedTime()">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Incidencias -->
+    <div class="card p-4">
+      <div class="section-header">Incidencias</div>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <div><label>Jugador</label><input id="incPlayer" placeholder="Apellido"></div>
+        <div><label>Minuto</label><input id="incMinute" type="number" min="0" max="130" placeholder="0"></div>
+        <div>
+          <label>Equipo</label>
+          <select id="incTeam">
+            <option value="local">Local</option>
+            <option value="visitante">Visitante</option>
+          </select>
+        </div>
+        <div>
+          <label>Tipo</label>
+          <select id="incType">
+            <option value="gol">⚽ Gol</option>
+            <option value="amarilla">🟡 Amarilla</option>
+            <option value="roja">🔴 Roja</option>
+            <option value="cambio">🔄 Cambio</option>
+            <option value="penal">Penal</option>
+          </select>
+        </div>
+      </div>
+      <input id="incPlayerOut" placeholder="Sale (para cambios)" class="mb-2">
+      <button class="btn btn-primary w-full mb-3" onclick="addIncident()">+ Agregar Incidencia</button>
+      <div id="incidentsList" class="space-y-1 max-h-40 overflow-y-auto"></div>
+    </div>
+
+  </div>
+
+  <!-- COLUMNA 2: Equipos, jugadores, DT -->
+  <div class="space-y-4">
+
+    <!-- Equipo Local -->
+    <div class="card p-4">
+      <div class="section-header">⬜ Equipo Local</div>
+      <div class="space-y-2">
+        <div>
+          <label>Equipo</label>
+          <select id="localEquipo" onchange="onEquipoSelect('local')">
+            <option value="">— seleccionar —</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label>Color principal</label><input type="color" id="localColor" value="#019604" style="height:36px;padding:2px 4px;"></div>
+          <div><label>Color número</label><input type="color" id="localColorNumero" value="#ffffff" style="height:36px;padding:2px 4px;"></div>
+        </div>
+        <div>
+          <label>Formación</label>
+          <select id="localFormacion">
+            <option>4-3-3</option><option>4-4-2</option><option>4-2-3-1</option>
+            <option>3-5-2</option><option>5-3-2</option><option>4-1-4-1</option>
+          </select>
+        </div>
+        <div>
+          <label>Goles</label>
+          <div class="flex items-center gap-2">
+            <button class="btn btn-danger btn-sm" onclick="changeGoles('local',-1)">−</button>
+            <span id="localGoles" class="text-2xl font-bold text-white tabular-nums w-8 text-center">0</span>
+            <button class="btn btn-primary btn-sm" onclick="changeGoles('local',1)">+</button>
+          </div>
+        </div>
+        <div><label>DT</label><input id="localDT" placeholder="Nombre del DT"></div>
+        <button class="btn btn-primary w-full" onclick="saveEquipo('local')">Guardar Local en Pantalla</button>
+      </div>
+    </div>
+
+    <!-- Equipo Visitante -->
+    <div class="card p-4">
+      <div class="section-header">⬛ Equipo Visitante</div>
+      <div class="space-y-2">
+        <div>
+          <label>Equipo</label>
+          <select id="visitanteEquipo" onchange="onEquipoSelect('visitante')">
+            <option value="">— seleccionar —</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label>Color principal</label><input type="color" id="visitanteColor" value="#FFFFFF" style="height:36px;padding:2px 4px;"></div>
+          <div><label>Color número</label><input type="color" id="visitanteColorNumero" value="#000000" style="height:36px;padding:2px 4px;"></div>
+        </div>
+        <div>
+          <label>Formación</label>
+          <select id="visitanteFormacion">
+            <option>4-4-2</option><option>4-3-3</option><option>4-2-3-1</option>
+            <option>3-5-2</option><option>5-3-2</option><option>4-1-4-1</option>
+          </select>
+        </div>
+        <div>
+          <label>Goles</label>
+          <div class="flex items-center gap-2">
+            <button class="btn btn-danger btn-sm" onclick="changeGoles('visitante',-1)">−</button>
+            <span id="visitanteGoles" class="text-2xl font-bold text-white tabular-nums w-8 text-center">0</span>
+            <button class="btn btn-primary btn-sm" onclick="changeGoles('visitante',1)">+</button>
+          </div>
+        </div>
+        <div><label>DT</label><input id="visitanteDT" placeholder="Nombre del DT"></div>
+        <button class="btn btn-primary w-full" onclick="saveEquipo('visitante')">Guardar Visitante en Pantalla</button>
+      </div>
+    </div>
+
+    <!-- Jugadores (titulares y suplentes) -->
+    <div class="card p-4">
+      <div class="section-header">Planteles</div>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <div>
+          <label>Equipo</label>
+          <select id="plantillaEquipo">
+            <option value="local">Local</option>
+            <option value="visitante">Visitante</option>
+          </select>
+        </div>
+        <div>
+          <label>Tipo</label>
+          <select id="plantillaTipo">
+            <option value="jugadores">Titular</option>
+            <option value="suplentes">Suplente</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-1 mb-2">
+        <input id="jugNombre" placeholder="Apellido">
+        <input id="jugNumero" type="number" placeholder="#" min="1" max="99">
+        <button class="btn btn-ghost btn-sm" onclick="addJugador()">+ Agregar</button>
+      </div>
+      <div id="jugadoresList" class="space-y-1 max-h-40 overflow-y-auto mb-2"></div>
+      <button class="btn btn-primary w-full btn-sm" onclick="savePlantilla()">Guardar Plantel en Pantalla</button>
+    </div>
+
+  </div>
+
+  <!-- COLUMNA 3: Alertas, Widgets, Publicidad, Resultados -->
+  <div class="space-y-4">
+
+    <!-- Widgets visibles -->
+    <div class="card p-4">
+      <div class="section-header">Widgets Visibles</div>
+      <div class="space-y-2" id="widgetsGrid">
+        <!-- generado por JS -->
+      </div>
+    </div>
+
+    <!-- Alertas -->
+    <div class="card p-4">
+      <div class="section-header">Alertas</div>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <div>
+          <label>Tipo</label>
+          <select id="alertType">
+            <option value="gol">⚽ GOL</option>
+            <option value="amarilla">🟡 Amarilla</option>
+            <option value="roja">🔴 Roja</option>
+            <option value="var">📺 VAR</option>
+            <option value="descanso">⏸ Descanso</option>
+            <option value="fin">🏁 Fin</option>
+          </select>
+        </div>
+        <div>
+          <label>Equipo</label>
+          <select id="alertTeam">
+            <option value="local">Local</option>
+            <option value="visitante">Visitante</option>
+          </select>
+        </div>
+        <div><label>Jugador</label><input id="alertPlayer" placeholder="Apellido"></div>
+        <div><label>Minuto</label><input id="alertMinute" type="number" min="0" max="130"></div>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-primary flex-1" onclick="fireAlert()">⚡ Disparar (12s auto)</button>
+        <button class="btn btn-danger" onclick="clearAlert()">✕</button>
+      </div>
+    </div>
+
+    <!-- Publicidad -->
+    <div class="card p-4">
+      <div class="section-header">Publicidad</div>
+      <div class="space-y-2 mb-2">
+        <div><label>Sponsor</label><input id="adSponsor" placeholder="Nombre sponsor"></div>
+        <div><label>Logo URL</label><input id="adLogo" placeholder="/sponsors/logo.png"></div>
+        <div>
+          <label>Tipo</label>
+          <select id="adType">
+            <option value="banner">Banner (lower third)</option>
+            <option value="cortina">Cortina (pantalla completa)</option>
+            <option value="overlay">Overlay (esquina)</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-primary flex-1" onclick="showAd()">▶ Mostrar</button>
+        <button class="btn btn-danger flex-1" onclick="hideAd()">✕ Ocultar</button>
+      </div>
+    </div>
+
+    <!-- Otros resultados -->
+    <div class="card p-4">
+      <div class="section-header">Otros Resultados</div>
+      <div id="resultadosList" class="space-y-1 mb-2 max-h-32 overflow-y-auto"></div>
+      <div class="grid grid-cols-5 gap-1 mb-1">
+        <input id="resLocal" placeholder="Local" class="col-span-2">
+        <input id="resScore" placeholder="0-0" style="width:100%;text-align:center">
+        <input id="resVisitante" placeholder="Visit." class="col-span-2">
+      </div>
+      <input id="resLibre" placeholder="Texto libre (ticker)" class="mb-2">
+      <div class="flex gap-2">
+        <button class="btn btn-ghost btn-sm flex-1" onclick="addResultado()">+ Agregar</button>
+        <button class="btn btn-primary btn-sm flex-1" onclick="saveResultados()">Guardar en Pantalla</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+<!-- /mainContent -->
+
+<div id="toast"></div>
+
+<script>
+const API = '/api/overlay';
+let state = null;
+let timerInterval = null;
+let equiposMap = {}; // { nombre: logo }
+let localJugadores = []; // jugadores en memoria antes de guardar
+let visitanteJugadores = [];
+let resultadosList = [];
+
+// ─── SSE ─────────────────────────────────────────────────────────────────────
+function connectSSE() {
+  const es = new EventSource(API + '/events');
+  es.onopen = () => {
+    document.getElementById('statusDot').className = 'status-dot dot-green';
+    document.getElementById('statusText').textContent = 'Conectado';
+  };
+  es.onmessage = e => {
+    try {
+      const data = JSON.parse(e.data);
+      state = data;
+      renderAll(state);
+    } catch(err) { console.error('[panel]', err); }
+  };
+  es.onerror = () => {
+    document.getElementById('statusDot').className = 'status-dot dot-gray';
+    document.getElementById('statusText').textContent = 'Reconectando...';
+    es.close();
+    setTimeout(connectSSE, 3000);
+  };
+}
+
+// ─── API helper ──────────────────────────────────────────────────────────────
+async function api(method, endpoint, body) {
+  try {
+    const token = getToken();
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+    };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(API + endpoint, opts);
+    if (r.status === 401) {
+      // Token expirado o inválido
+      localStorage.removeItem('token');
+      showLogin();
+      throw new Error('Sesión expirada. Volvé a ingresar.');
+    }
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${r.status}`);
+    }
+    return r.json();
+  } catch(e) {
+    toast(e.message, 'error');
+    throw e;
+  }
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function renderAll(s) {
+  if (!s) return;
+
+  // Match
+  document.getElementById('matchStatus').value = s.match?.status || 'NO INICIADO';
+  document.getElementById('matchReferee').value = s.match?.referee || '';
+  document.getElementById('matchStadium').value = s.match?.stadium || '';
+  document.getElementById('matchTournament').value = s.match?.tournament || '';
+
+  // Timer (display only — el cálculo lo hace el interval local)
+  document.getElementById('timerPeriodSel').value = s.timer?.period || 'PT';
+  document.getElementById('addedTime').value = s.timer?.addedTime || 0;
+  renderTimerDisplay();
+
+  // Equipos
+  document.getElementById('localGoles').textContent = s.local?.goles ?? 0;
+  document.getElementById('visitanteGoles').textContent = s.visitante?.goles ?? 0;
+
+  // DT
+  document.getElementById('localDT').value = s.dt?.local || '';
+  document.getElementById('visitanteDT').value = s.dt?.visitante || '';
+
+  // Emergency
+  const btnEm = document.getElementById('btnEmergency');
+  btnEm.textContent = s.emergencyMode ? '⚡ Emergencia ON' : '⚡ Emergencia OFF';
+  btnEm.className = s.emergencyMode ? 'btn btn-primary btn-sm' : 'btn btn-danger btn-sm';
+
+  // Widgets
+  renderWidgets(s.widgets);
+
+  // Incidencias
+  renderIncidents(s.incidents || []);
+
+  // Resultados
+  if (s.resultados) {
+    resultadosList = [...s.resultados];
+    renderResultadosList();
+  }
+  if (s.libre !== undefined) document.getElementById('resLibre').value = s.libre || '';
+
+  // Sincronizar plantilla temp con lo que vino del server (solo si está vacío localmente)
+  syncPlantillaTemp(s);
+}
+
+function renderTimerDisplay() {
+  if (!state) return;
+  const t = state.timer;
+  let min = t.baseMinute || 0;
+  if (t.running && t.startTimestamp) {
+    min += Math.floor((Date.now() - t.startTimestamp) / 60000);
+  }
+  const added = t.addedTime || 0;
+  const addedStr = added > 0 ? ` +${added}` : '';
+  document.getElementById('timerDisplay').textContent = `${min}'${addedStr}`;
+
+  const PERIOD_LABELS = {
+    PT:'PRIMER TIEMPO', ET:'ENTRETIEMPO', ST:'SEGUNDO TIEMPO',
+    PROL:'PRÓRROGA', PEN:'PENALES', FIN:'FINALIZADO'
+  };
+  document.getElementById('timerPeriod').textContent = PERIOD_LABELS[t.period || 'PT'] || '';
+}
+
+function renderWidgets(widgets) {
+  if (!widgets) return;
+  const container = document.getElementById('widgetsGrid');
+  const LABELS = {
+    marcador: 'Marcador (OBS)', formaciones: 'Formaciones',
+    otrosPartidos: 'Otros Partidos', tablaPosiciones: 'Tabla de Posiciones',
+    ticker: 'Ticker', publicidad: 'Publicidad',
+    estadisticas: 'Estadísticas', alerta: 'Alertas (Auto)',
+    formacionPrevia: 'Formación Previa'
+  };
+  container.innerHTML = '';
+  Object.entries(LABELS).forEach(([key, label]) => {
+    const id = `w_${key}`;
+    const checked = widgets[key] ? 'checked' : '';
+    container.insertAdjacentHTML('beforeend', `
+      <div class="flex items-center justify-between py-1">
+        <span class="text-sm text-gray-300">${label}</span>
+        <label class="toggle">
+          <input type="checkbox" id="${id}" ${checked} onchange="toggleWidget('${key}',this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+    `);
+  });
+}
+
+function renderIncidents(incidents) {
+  const c = document.getElementById('incidentsList');
+  const ICONS = { gol:'⚽', amarilla:'🟡', roja:'🔴', cambio:'🔄', penal:'🎯' };
+  c.innerHTML = incidents.map(i => `
+    <div class="incident-row">
+      <span>${ICONS[i.type] || '•'}</span>
+      <span class="flex-1">${i.player || '—'}</span>
+      <span class="text-gray-400">${i.team === 'local' ? 'L' : 'V'}</span>
+      <span class="text-brand">${i.minute || '—'}'</span>
+      <button class="btn btn-danger btn-sm" onclick="deleteIncident('${i.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function renderResultadosList() {
+  const c = document.getElementById('resultadosList');
+  c.innerHTML = resultadosList.map((r, i) => `
+    <div class="incident-row">
+      <span class="flex-1 text-xs">${r.local || ''} ${r.score || ''} ${r.visitante || ''}</span>
+      <button class="btn btn-danger btn-sm" onclick="removeResultado(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+// ─── Match ────────────────────────────────────────────────────────────────────
+async function saveMatch() {
+  await api('PATCH', '/match', {
+    status:     document.getElementById('matchStatus').value,
+    referee:    document.getElementById('matchReferee').value,
+    stadium:    document.getElementById('matchStadium').value,
+    tournament: document.getElementById('matchTournament').value,
+  });
+  toast('Partido actualizado');
+}
+
+// ─── Timer ────────────────────────────────────────────────────────────────────
+async function timerStart() {
+  await api('POST', '/timer/start');
+  toast('Timer iniciado');
+}
+async function timerPause() {
+  await api('POST', '/timer/pause');
+  toast('Timer pausado');
+}
+async function timerReset() {
+  if (!confirm('¿Resetear timer?')) return;
+  await api('POST', '/timer/reset');
+  toast('Timer reseteado');
+}
+
+async function changePeriod() {
+  const period = document.getElementById('timerPeriodSel').value;
+  const BASE = { PT:0, ET:45, ST:45, PROL:90, PEN:120, FIN:90 };
+  await api('PATCH', '/timer/period', { period, baseMinute: BASE[period] ?? 0 });
+  toast(`Período: ${period}`);
+}
+
+async function saveAddedTime() {
+  const addedTime = parseInt(document.getElementById('addedTime').value) || 0;
+  await api('PATCH', '/timer/added', { addedTime });
+  toast(`Adicional: +${addedTime}`);
+}
+
+// Timer local update
+setInterval(() => { if (state) renderTimerDisplay(); }, 1000);
+
+// ─── Incidencias ──────────────────────────────────────────────────────────────
+async function addIncident() {
+  const type     = document.getElementById('incType').value;
+  const team     = document.getElementById('incTeam').value;
+  const player   = document.getElementById('incPlayer').value.trim();
+  const playerOut = document.getElementById('incPlayerOut').value.trim();
+  const minute   = parseInt(document.getElementById('incMinute').value) || null;
+  if (!player) { toast('Ingresá el jugador', 'error'); return; }
+  await api('POST', '/incidents', { type, team, player, playerOut, minute });
+  document.getElementById('incPlayer').value = '';
+  document.getElementById('incPlayerOut').value = '';
+  toast('Incidencia registrada');
+}
+
+async function deleteIncident(id) {
+  await api('DELETE', `/incidents/${id}`);
+  toast('Incidencia eliminada');
+}
+
+// ─── Equipos ──────────────────────────────────────────────────────────────────
+async function loadEquipos() {
+  try {
+    const data = await fetch(API + '/equipos').then(r => r.json());
+    equiposMap = data;
+    const names = Object.keys(data);
+    ['localEquipo', 'visitanteEquipo'].forEach(id => {
+      const sel = document.getElementById(id);
+      names.forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        sel.appendChild(opt);
+      });
+    });
+  } catch(e) { console.error('[panel] loadEquipos', e); }
+}
+
+function onEquipoSelect(side) {
+  const sel = document.getElementById(`${side}Equipo`);
+  const nombre = sel.value;
+  const logo = equiposMap[nombre] || '';
+  // No guardamos todavía, solo pre-llenamos nombre/logo
+}
+
+async function saveEquipo(side) {
+  const nombre = document.getElementById(`${side}Equipo`).value;
+  const logo = nombre ? (equiposMap[nombre] || '') : '';
+  const color = document.getElementById(`${side}Color`).value;
+  const colorNumero = document.getElementById(`${side}ColorNumero`).value;
+  const formacion = document.getElementById(`${side}Formacion`).value;
+  const goles = parseInt(document.getElementById(`${side}Goles`).textContent) || 0;
+  const dt = document.getElementById(`${side}DT`).value.trim();
+
+  await api('PATCH', `/${side}`, { nombre, logo, color, colorNumero, formacion, goles });
+  await api('PATCH', '/dt', { [side]: dt });
+  toast(`${side.charAt(0).toUpperCase()+side.slice(1)} guardado`);
+}
+
+async function changeGoles(side, delta) {
+  if (!state) return;
+  const current = state[side]?.goles ?? 0;
+  const newGoles = Math.max(0, current + delta);
+  await api('PATCH', `/${side}`, { goles: newGoles });
+}
+
+// ─── Plantel de jugadores ─────────────────────────────────────────────────────
+// Lista en memoria del equipo actualmente editando
+const plantillaTemp = { local: { jugadores: [], suplentes: [] }, visitante: { jugadores: [], suplentes: [] } };
+
+function getCurrentPlantilla() {
+  const eq = document.getElementById('plantillaEquipo').value;
+  const tipo = document.getElementById('plantillaTipo').value;
+  return plantillaTemp[eq][tipo];
+}
+
+function addJugador() {
+  const nombre = document.getElementById('jugNombre').value.trim();
+  const numero = parseInt(document.getElementById('jugNumero').value) || null;
+  if (!nombre) { toast('Ingresá el nombre', 'error'); return; }
+  const lista = getCurrentPlantilla();
+  lista.push({ nombre, numero, goles: 0, amarilla: false, roja: false, figura: false });
+  document.getElementById('jugNombre').value = '';
+  document.getElementById('jugNumero').value = '';
+  renderJugadoresList();
+}
+
+function removeJugador(idx) {
+  const lista = getCurrentPlantilla();
+  lista.splice(idx, 1);
+  renderJugadoresList();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('plantillaEquipo').addEventListener('change', renderJugadoresList);
+  document.getElementById('plantillaTipo').addEventListener('change', renderJugadoresList);
+});
+
+function renderJugadoresList() {
+  const lista = getCurrentPlantilla();
+  const c = document.getElementById('jugadoresList');
+  c.innerHTML = lista.map((j, i) => `
+    <div class="incident-row">
+      <span class="text-brand font-bold w-6">${j.numero || '—'}</span>
+      <span class="flex-1 text-sm">${j.nombre}</span>
+      <button class="btn btn-danger btn-sm" onclick="removeJugador(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+async function savePlantilla() {
+  const eq = document.getElementById('plantillaEquipo').value;
+  await api('PATCH', `/${eq}`, {
+    jugadores: plantillaTemp[eq].jugadores,
+    suplentes: plantillaTemp[eq].suplentes
+  });
+  toast(`Plantel ${eq} guardado en pantalla`);
+}
+
+// Cuando llegue el state, poblar plantillaTemp si está vacío
+function syncPlantillaTemp(s) {
+  ['local', 'visitante'].forEach(eq => {
+    if (!plantillaTemp[eq].jugadores.length && s[eq]?.jugadores?.length) {
+      plantillaTemp[eq].jugadores = [...s[eq].jugadores];
+    }
+    if (!plantillaTemp[eq].suplentes.length && s[eq]?.suplentes?.length) {
+      plantillaTemp[eq].suplentes = [...s[eq].suplentes];
+    }
+  });
+}
+
+// ─── Widgets ──────────────────────────────────────────────────────────────────
+async function toggleWidget(key, value) {
+  await api('PATCH', '/widgets', { [key]: value });
+}
+
+// ─── Alertas ──────────────────────────────────────────────────────────────────
+async function fireAlert() {
+  const type   = document.getElementById('alertType').value;
+  const team   = document.getElementById('alertTeam').value;
+  const player = document.getElementById('alertPlayer').value.trim();
+  const minute = parseInt(document.getElementById('alertMinute').value) || null;
+  await api('PATCH', '/alerts', { active: true, type, team, player, minute });
+  toast(`Alerta: ${type} disparada (12s auto-clean)`);
+  // autoClean client-side: limpia la alerta a los 12s
+  setTimeout(() => api('PATCH', '/alerts', { active: false, type: null, team: null, player: null, minute: null }), 12000);
+}
+
+async function clearAlert() {
+  await api('PATCH', '/alerts', { active: false, type: null, team: null, player: null, minute: null });
+  toast('Alerta limpiada');
+}
+
+// ─── Publicidad ───────────────────────────────────────────────────────────────
+async function showAd() {
+  await api('PATCH', '/ads', {
+    active: true,
+    current:     document.getElementById('adType').value,
+    sponsor:     document.getElementById('adSponsor').value.trim(),
+    logoSponsor: document.getElementById('adLogo').value.trim(),
+  });
+  await api('PATCH', '/widgets', { publicidad: true });
+  toast('Publicidad activada');
+}
+
+async function hideAd() {
+  await api('PATCH', '/ads', { active: false });
+  await api('PATCH', '/widgets', { publicidad: false });
+  toast('Publicidad ocultada');
+}
+
+// ─── Resultados ───────────────────────────────────────────────────────────────
+function addResultado() {
+  const local = document.getElementById('resLocal').value.trim();
+  const score = document.getElementById('resScore').value.trim();
+  const visitante = document.getElementById('resVisitante').value.trim();
+  if (!local && !visitante) return;
+  resultadosList.push({ local, score, visitante });
+  renderResultadosList();
+  document.getElementById('resLocal').value = '';
+  document.getElementById('resScore').value = '';
+  document.getElementById('resVisitante').value = '';
+}
+
+function removeResultado(i) {
+  resultadosList.splice(i, 1);
+  renderResultadosList();
+}
+
+async function saveResultados() {
+  const libre = document.getElementById('resLibre').value.trim();
+  await api('PUT', '/resultados', { resultados: resultadosList, libre });
+  toast('Resultados guardados en pantalla');
+}
+
+// ─── Emergency / Reset ────────────────────────────────────────────────────────
+async function toggleEmergency() {
+  await api('POST', '/emergency');
+  toast('Modo emergencia toggled');
+}
+
+async function resetState() {
+  if (!confirm('¿Resetear TODO el estado del overlay?')) return;
+  await api('POST', '/state/reset');
+  toast('Estado reseteado');
+}
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast-item ${type === 'error' ? 'bg-red-900 text-red-200' : 'bg-green-900 text-green-200'}`;
+  el.textContent = msg;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ─── Auth / Init ─────────────────────────────────────────────────────────────
+function getToken() {
+  return localStorage.getItem('token') || '';
+}
+
+async function doLogin() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const btn  = document.getElementById('btnLogin');
+  const errEl = document.getElementById('loginError');
+  if (!user || !pass) { showLoginError('Completá usuario y contraseña'); return; }
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  try {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: user, password: pass })
+    });
+    const data = await r.json();
+    if (!r.ok || !data.token) throw new Error(data.message || data.error || 'Credenciales inválidas');
+    localStorage.setItem('token', data.token);
+    showApp();
+  } catch(e) {
+    showLoginError(e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Entrar';
+  }
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function showLogin() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainContent').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+  connectSSE();
+  loadEquipos();
+}
+
+// Soporte Enter en login
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loginPass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+  document.getElementById('loginUser').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('loginPass').focus();
+  });
+});
+
+// Iniciar: verificar si ya hay token válido
+(async function init() {
+  const token = getToken();
+  if (!token) { showLogin(); return; }
+  // Verificar que el token sigue siendo válido
+  try {
+    const r = await fetch('/api/health', { headers: { 'Authorization': 'Bearer ' + token } });
+    // Si llega, hay server. Verificar con endpoint protegido
+    const r2 = await fetch('/api/test-protegido', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (r2.status === 401) { localStorage.removeItem('token'); showLogin(); return; }
+    showApp();
+  } catch(e) {
+    // Sin red o error, igual intentar mostrar la app
+    showApp();
+  }
+})();
+</script>
+</body>
+</html>

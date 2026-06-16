@@ -28,6 +28,10 @@ class Router {
         $this->addRoute('DELETE', $path, $handlers);
     }
 
+    public function patch(string $path, callable ...$handlers): void {
+        $this->addRoute('PATCH', $path, $handlers);
+    }
+
     private function addRoute(string $method, string $path, array $handlers): void {
         $fullPath = $this->prefix . $path;
         // Convierte :param a regex named groups

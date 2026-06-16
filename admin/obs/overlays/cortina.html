@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Overlay Cortina Sponsor — JDE OBS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body {
+      width:1920px; height:1080px; overflow:hidden;
+      background:transparent; font-family:'Inter',sans-serif;
+    }
+
+    #cortina {
+      position:absolute; inset:0;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:40px;
+      opacity:0; pointer-events:none;
+      transition: opacity .6s ease;
+    }
+    #cortina.show { opacity:1; }
+
+    .cortina-bg {
+      position:absolute; inset:0;
+      background:linear-gradient(160deg, #0d0d18 0%, #1a103a 60%, #0d0d18 100%);
+    }
+
+    /* Decoración geométrica */
+    .cortina-decor {
+      position:absolute; inset:0; overflow:hidden; pointer-events:none;
+    }
+    .cortina-decor::before {
+      content:'';
+      position:absolute;
+      width:900px; height:900px;
+      border-radius:50%;
+      border:1px solid rgba(139,92,246,.08);
+      top:50%; left:50%; transform:translate(-50%,-50%);
+    }
+    .cortina-decor::after {
+      content:'';
+      position:absolute;
+      width:1200px; height:1200px;
+      border-radius:50%;
+      border:1px solid rgba(139,92,246,.04);
+      top:50%; left:50%; transform:translate(-50%,-50%);
+    }
+
+    .cortina-content {
+      position:relative; z-index:1;
+      text-align:center; display:flex; flex-direction:column; align-items:center; gap:28px;
+    }
+
+    .cortina-tag {
+      font-size:12px; font-weight:700; color:#8B5CF6;
+      letter-spacing:.2em; text-transform:uppercase;
+      border:1px solid rgba(139,92,246,.4); border-radius:20px;
+      padding:5px 20px;
+    }
+
+    .cortina-logo {
+      max-height:220px; max-width:600px; object-fit:contain;
+      display:none;
+    }
+    .cortina-logo.loaded { display:block; }
+
+    .cortina-sponsor {
+      font-size:72px; font-weight:900; color:#ffffff;
+      letter-spacing:.03em;
+      text-shadow:0 4px 40px rgba(139,92,246,.4);
+    }
+
+    .cortina-divider {
+      width:120px; height:3px; background:linear-gradient(90deg,transparent,#8B5CF6,transparent);
+      border-radius:3px;
+    }
+
+    .cortina-footer {
+      font-size:16px; color:rgba(255,255,255,.3); font-weight:500; letter-spacing:.1em;
+    }
+
+    /* Líneas decorativas laterales */
+    .cortina-lines {
+      position:absolute; top:0; bottom:0;
+      width:6px; background:linear-gradient(180deg,transparent,#8B5CF6,transparent);
+      opacity:.3; border-radius:3px;
+    }
+    .cortina-lines.left  { left:80px; }
+    .cortina-lines.right { right:80px; }
+  </style>
+</head>
+<body>
+
+  <div id="cortina">
+    <div class="cortina-bg"></div>
+    <div class="cortina-decor"></div>
+    <div class="cortina-lines left"></div>
+    <div class="cortina-lines right"></div>
+
+    <div class="cortina-content">
+      <div class="cortina-tag">Presentado por</div>
+      <img id="cortinaLogo" class="cortina-logo" src="" alt="">
+      <div class="cortina-sponsor" id="cortinaSponsor"></div>
+      <div class="cortina-divider"></div>
+      <div class="cortina-footer">LIGA JDE — OFICIAL</div>
+    </div>
+  </div>
+
+  <script src="/js/overlay-client.js"></script>
+  <script>
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    window.onOverlayState = function(state) {
+      const visible =
+        !state.emergencyMode &&
+        state.widgets?.publicidad === true &&
+        state.ads?.active === true &&
+        state.ads?.current === 'cortina';
+
+      document.getElementById('cortina').classList.toggle('show', visible);
+      if (!visible) return;
+
+      const sponsor = state.ads?.sponsor || '';
+      const logo    = state.ads?.logoSponsor || '';
+
+      document.getElementById('cortinaSponsor').textContent = sponsor;
+
+      const imgEl = document.getElementById('cortinaLogo');
+      if (logo) {
+        imgEl.src = escHtml(logo);
+        imgEl.onload  = () => imgEl.classList.add('loaded');
+        imgEl.onerror = () => imgEl.classList.remove('loaded');
+      } else {
+        imgEl.src = '';
+        imgEl.classList.remove('loaded');
+      }
+    };
+  </script>
+</body>
+</html>

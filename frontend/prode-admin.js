@@ -123,30 +123,44 @@ async function loadFechas() {
     });
 
     if (!fechasCache.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-10 text-center text-on-surface-variant text-sm">No hay jornadas con pronósticos aún.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-10 text-center text-on-surface-variant text-sm">No hay jornadas con pronósticos aún.</td></tr>';
       return;
     }
 
     tbody.innerHTML = fechasCache.map((f) => {
       const cerrada    = f.estado === 'cerrada';
-      const estadoBadge = cerrada
-        ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-green-500/15 text-green-400"><span class="material-symbols-outlined text-[12px]">check_circle</span>Cerrada</span>'
-        : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500/15 text-yellow-400"><span class="material-symbols-outlined text-[12px]">pending</span>Abierta</span>';
+      const suspendida = !cerrada && f.suspendida;
+      let estadoBadge;
+      if (cerrada) {
+        estadoBadge = '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-green-500/15 text-green-400"><span class="material-symbols-outlined text-[12px]">check_circle</span>Cerrada</span>';
+      } else if (suspendida) {
+        estadoBadge = '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-orange-500/15 text-orange-400"><span class="material-symbols-outlined text-[12px]">pause_circle</span>Suspendida</span>';
+      } else {
+        estadoBadge = '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500/15 text-yellow-400"><span class="material-symbols-outlined text-[12px]">pending</span>Abierta</span>';
+      }
       const deadlineStr = fmtDatetime(f.deadline);
+      const overrideStr = f.deadline_override ? `<div class="text-[10px] text-orange-400 mt-0.5">Override: ${fmtDatetime(f.deadline_override)}</div>` : '';
       const accion = cerrada
         ? '<span class="text-xs text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-green-400">task_alt</span>Puntos calculados</span>'
         : `<button data-jornada="${f.jornada}" data-torneo="${esc(f.torneo)}" data-temporada="${f.temporada_id}"
                class="btnCerrar h-8 rounded-lg bg-primary px-3 text-xs font-semibold text-white hover:bg-primary/80 transition-colors flex items-center gap-1">
              <span class="material-symbols-outlined text-[14px]">calculate</span>Calcular puntos
            </button>`;
+      const accionOverride = cerrada
+        ? ''
+        : `<button data-jornada="${f.jornada}" data-torneo="${esc(f.torneo)}" data-temporada="${f.temporada_id}" data-current="${esc(f.deadline_override || '')}"
+               class="btnExtenderPlazo h-8 rounded-lg border border-outline-variant/30 px-3 text-xs font-semibold text-on-surface-variant hover:bg-surface-container transition-colors flex items-center gap-1">
+             <span class="material-symbols-outlined text-[14px]">more_time</span>${f.deadline_override ? 'Cambiar plazo' : 'Extender plazo'}
+           </button>`;
       return `<tr class="hover:bg-surface-container/50 transition-colors">
         <td class="px-4 py-3 font-bold font-headline">J${f.jornada}</td>
         <td class="px-4 py-3 text-on-surface-variant text-sm">${esc(f.torneo)}</td>
         <td class="px-4 py-3">${estadoBadge}</td>
-        <td class="px-4 py-3 text-sm">${deadlineStr}</td>
+        <td class="px-4 py-3 text-sm">${deadlineStr}${overrideStr}</td>
         <td class="px-4 py-3 text-right font-mono">${f.participantes}</td>
         <td class="px-4 py-3 text-right font-mono">${f.pronosticos_total}</td>
         <td class="px-4 py-3">${accion}</td>
+        <td class="px-4 py-3">${accionOverride}</td>
       </tr>`;
     }).join('');
 
@@ -169,9 +183,65 @@ async function loadFechas() {
         }
       });
     });
+
+    tbody.querySelectorAll('.btnExtenderPlazo').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const { jornada, torneo, temporada, current } = btn.dataset;
+        // Sugerir el próximo domingo 13:00 como valor por defecto
+        const defaultVal = current || nextSundayAt13();
+        const input = prompt(
+          `Extender plazo para J${jornada} \u2014 ${torneo}\n\nIngresá la fecha y hora límite (formato: YYYY-MM-DD HH:MM)\nDejá vacío para borrar el override y volver al cálculo automático.`,
+          defaultVal
+        );
+        if (input === null) return; // canceló
+        const deadlineOverride = input.trim() === '' ? null : input.trim();
+        btn.disabled = true;
+        try {
+          const data = await api.put(`${PRODE}/admin/fecha/${jornada}/deadline`, {
+            torneo,
+            temporada_id: Number(temporada),
+            deadline_override: deadlineOverride,
+          });
+          showAdminToast(data.mensaje || 'Plazo actualizado', 'success');
+          await Promise.all([loadFechas(), loadStats()]);
+        } catch (e) {
+          alert('Error al actualizar plazo: ' + (e?.message || 'Intentá de nuevo.'));
+          btn.disabled = false;
+        }
+      });
+    });
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-10 text-center text-red-400 text-sm">Error cargando fechas.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-10 text-center text-red-400 text-sm">Error cargando fechas.</td></tr>';
   }
+}
+
+// ── Helper: próximo domingo a las 13:00 ───────────────────────────────
+function nextSundayAt13() {
+  const d = new Date();
+  const dow = d.getDay(); // 0=domingo
+  const daysUntilSunday = dow === 0 ? 7 : 7 - dow;
+  d.setDate(d.getDate() + daysUntilSunday);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day} 13:00`;
+}
+
+// ── Toast para el panel admin ─────────────────────────────────────────
+function showAdminToast(msg, type = 'success') {
+  let el = document.getElementById('adminToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'adminToast';
+    el.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;padding:.75rem 1.25rem;border-radius:.75rem;font-size:.875rem;font-weight:600;transition:opacity .3s;pointer-events:none';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.background = type === 'success' ? 'rgba(34,197,94,.9)' : 'rgba(239,68,68,.9)';
+  el.style.color = '#fff';
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 3000);
 }
 
 document.getElementById('btnRefreshFechas').addEventListener('click', () => {

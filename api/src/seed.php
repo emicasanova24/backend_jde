@@ -270,10 +270,16 @@ function ensureProdeTables(): void {
             estado ENUM('abierta','cerrada') NOT NULL DEFAULT 'abierta',
             puntos_calculados TINYINT(1) NOT NULL DEFAULT 0,
             closed_at DATETIME NULL,
+            deadline_override DATETIME NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             UNIQUE KEY uq_prode_fechas (jornada, categoria, torneo, temporada_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
+
+    // Migración: agregar deadline_override si la tabla ya existe en producción sin esa columna
+    if (!Database::columnExists('prode_fechas', 'deadline_override')) {
+        Database::execute("ALTER TABLE prode_fechas ADD COLUMN deadline_override DATETIME NULL AFTER closed_at");
+    }
 }
 
 // ---------------------------------------------------------------------------

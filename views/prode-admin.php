@@ -112,11 +112,11 @@
                   <th class="px-4 py-3 font-semibold">Deadline</th>
                   <th class="px-4 py-3 font-semibold text-right">Jugadores</th>
                   <th class="px-4 py-3 font-semibold text-right">Pronósticos</th>
-                  <th class="px-4 py-3 font-semibold">Acción</th>
+                  <th class="px-4 py-3 font-semibold" colspan="2">Acción</th>
                 </tr>
               </thead>
               <tbody id="tablaFechas" class="divide-y divide-outline-variant/10">
-                <tr><td colspan="7" class="px-4 py-10 text-center text-on-surface-variant text-sm">Cargando...</td></tr>
+                <tr><td colspan="8" class="px-4 py-10 text-center text-on-surface-variant text-sm">Cargando...</td></tr>
               </tbody>
             </table>
           </div>
