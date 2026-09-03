@@ -181,6 +181,8 @@ $webRoutes = [
     '/prode-mundial'    => 'views/prode-mundial.php',
     '/prode-admin'      => 'views/prode-admin.php',
     '/banners'          => 'views/banners.php',
+    '/politica-de-privacidad' => 'views/politica-privacidad.php',
+    '/eliminacion-de-datos'   => 'views/eliminacion-datos.php',
 ];
 
 if (isset($webRoutes[$uri])) {
